@@ -1,0 +1,25 @@
+{
+  "name": "fab-workspace",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "db:push": "yarn workspace @fabrica/db db:push",
+    "db:studio": "yarn workspace @fabrica/db db:studio",
+    "db:generate": "yarn workspace @fabrica/db db:generate"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4",
+    "typescript": "^6.0.3",
+    "@types/node": "^24.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Brand Colors ─────────────────────────────────────── */
+  --color-primary:          #0066A1;
+  --color-primary-hover:    #004C7A;
+  --color-primary-soft:     #DDF0F9;
+  --color-primary-50:       #F0F8FC;
+
+  --color-secondary:        #8EC63F;
+  --color-secondary-soft:   #E8F5D8;
+  --color-secondary-700:    #6B962E;
+
+  --color-warning:          #FFD100;
+  --color-warning-soft:     #FFF8CC;
+  --color-warning-700:      #CCAA00;
+
+  --color-accent:           #2EA3D2;
+  --color-accent-soft:      #DDF0F9;
+
+  /* ── Surfaces ─────────────────────────────────────────── */
+  --color-surface:          #FFFFFF;
+  --color-surface-soft:     #F8FAFC;
+  --color-hairline:         #E2E8F0;
+  --color-hairline-input:   #CBD5E1;
+
+  /* ── Text ─────────────────────────────────────────────── */
+  --color-ink:              #0F172A;
+  --color-ink-muted:        #64748B;
+
+  /* ── Semantic ─────────────────────────────────────────── */
+  --color-success:          #8EC63F;
+  --color-success-soft:     #E8F5D8;
+  --color-error:            #EF4444;
+  --color-error-soft:       #FEE2E2;
+  --color-info:             #2EA3D2;
+  --color-info-soft:        #DDF0F9;
+
+  /* ── Font ─────────────────────────────────────────────── */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Base ──────────────────────────────────────────────── */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-feature-settings: 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-surface-soft text-ink;
+    font-weight: 300;
+  }
+
+  /* Tabular figures em elementos com classe .tabular */
+  .tabular {
+    font-feature-settings: 'tnum';
+    letter-spacing: -0.42px;
+  }
+}
