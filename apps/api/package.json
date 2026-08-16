@@ -14,6 +14,7 @@
     "@fabrica/types": "*",
     "@hono/node-server": "^1.14.4",
     "@hono/zod-openapi": "^1.6.0",
+    "better-auth": "^1.6.29",
     "dotenv": "^17.4.2",
     "hono": "^4.13.2",
     "zod": "^4.0.0"

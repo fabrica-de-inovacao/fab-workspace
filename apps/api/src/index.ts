@@ -1,11 +1,31 @@
 import './env.js' // valida env na startup — falha rápido se algo estiver errado
 import { serve } from '@hono/node-server'
 import { OpenAPIHono } from '@hono/zod-openapi'
+import { cors } from 'hono/cors'
 import { env } from './env.js'
+import { auth } from './lib/auth.js'
 import { db } from '@fabrica/db'
 import { sql } from 'drizzle-orm'
 
 const app = new OpenAPIHono()
+
+// ---------------------------------------------------------------------------
+// CORS — permite o admin-panel chamar a API
+// ---------------------------------------------------------------------------
+app.use('*', cors({
+  origin: [
+    'http://localhost:5173',
+    'https://workspace.fabitz.com.br',
+  ],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  credentials: true, // necessário para cookies de sessão
+}))
+
+// ---------------------------------------------------------------------------
+// Better Auth — intercepta todo /api/auth/**
+// ---------------------------------------------------------------------------
+app.on(['GET', 'POST'], '/api/auth/**', (c) => auth.handler(c.req.raw))
 
 // ---------------------------------------------------------------------------
 // Health check
@@ -32,5 +52,6 @@ app.doc('/openapi.json', {
 // ---------------------------------------------------------------------------
 serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   console.log(`🚀 API running on http://localhost:${info.port}`)
+  console.log(`🔐 Auth: http://localhost:${info.port}/api/auth`)
   console.log(`📄 OpenAPI: http://localhost:${info.port}/openapi.json`)
 })
