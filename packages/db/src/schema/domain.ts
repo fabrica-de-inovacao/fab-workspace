@@ -14,9 +14,11 @@ import { relations } from 'drizzle-orm'
 // users
 // ---------------------------------------------------------------------------
 export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  emailVerified: boolean('email_verified').notNull().default(false),
+  image: text('image'),
   cpf: varchar('cpf', { length: 11 }).unique(), // apenas dígitos, sem pontuação
   phone: varchar('phone', { length: 20 }),
   active: boolean('active').notNull().default(true),
@@ -43,7 +45,7 @@ export const roles = pgTable('roles', {
 export const userRoles = pgTable(
   'user_roles',
   {
-    userId: integer('user_id')
+    userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     roleId: integer('role_id')

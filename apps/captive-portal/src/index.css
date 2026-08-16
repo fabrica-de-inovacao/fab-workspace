@@ -12,5 +12,5 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
-  body { font-weight: 300; }
+  body { margin: 0; font-weight: 300; }
 }

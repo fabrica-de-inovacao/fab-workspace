@@ -1,34 +1,20 @@
 /**
- * Tabelas gerenciadas pelo Better Auth.
- * NÃO editar estrutura — o Better Auth depende exatamente dessas colunas.
- * Geradas com base na documentação do better-auth v1.x + drizzleAdapter (PostgreSQL).
+ * Infraestrutura gerenciada pelo Better Auth.
+ * A identidade central vive em `users` (domain.ts); estas tabelas armazenam
+ * métodos de login, sessões e verificações.
  */
 import {
   pgTable,
   text,
   timestamp,
-  boolean,
 } from 'drizzle-orm/pg-core'
+import { relations } from 'drizzle-orm'
+import { users } from './domain.js'
 
 // ---------------------------------------------------------------------------
-// better_auth_user — usuários autenticados no Admin Panel
-// Separado da nossa tabela `users` (membros da fábrica).
-// Um admin pode existir aqui sem ser membro, e vice-versa.
+// sessions
 // ---------------------------------------------------------------------------
-export const authUser = pgTable('better_auth_user', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').notNull().default(false),
-  image: text('image'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
-
-// ---------------------------------------------------------------------------
-// better_auth_session
-// ---------------------------------------------------------------------------
-export const authSession = pgTable('better_auth_session', {
+export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(),
   expiresAt: timestamp('expires_at').notNull(),
   token: text('token').notNull().unique(),
@@ -38,19 +24,19 @@ export const authSession = pgTable('better_auth_session', {
   userAgent: text('user_agent'),
   userId: text('user_id')
     .notNull()
-    .references(() => authUser.id, { onDelete: 'cascade' }),
+    .references(() => users.id, { onDelete: 'cascade' }),
 })
 
 // ---------------------------------------------------------------------------
-// better_auth_account — vincula providers externos (Google) ao authUser
+// accounts — uma linha por método de login (credential, google, ...)
 // ---------------------------------------------------------------------------
-export const authAccount = pgTable('better_auth_account', {
+export const accounts = pgTable('accounts', {
   id: text('id').primaryKey(),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
   userId: text('user_id')
     .notNull()
-    .references(() => authUser.id, { onDelete: 'cascade' }),
+    .references(() => users.id, { onDelete: 'cascade' }),
   accessToken: text('access_token'),
   refreshToken: text('refresh_token'),
   idToken: text('id_token'),
@@ -63,9 +49,9 @@ export const authAccount = pgTable('better_auth_account', {
 })
 
 // ---------------------------------------------------------------------------
-// better_auth_verification — tokens de verificação de email, reset de senha
+// verifications — tokens de email/reset
 // ---------------------------------------------------------------------------
-export const authVerification = pgTable('better_auth_verification', {
+export const verifications = pgTable('verifications', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
@@ -73,3 +59,11 @@ export const authVerification = pgTable('better_auth_verification', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, { fields: [sessions.userId], references: [users.id] }),
+}))
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+}))

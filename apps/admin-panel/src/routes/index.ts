@@ -8,6 +8,13 @@ import {
 import { authClient } from '../lib/auth-client.js'
 import { LoginPage } from './login.js'
 import { DashboardPage } from './dashboard.js'
+import { ProfilePage } from './profile.js'
+import { MembersPage } from './members.js'
+import { NewMemberPage } from './member-new.js'
+import { MemberDetailPage } from './member-detail.js'
+import { RolesPage } from './roles.js'
+import { PresencePage } from './presence.js'
+import { AppShell } from '../components/app-shell.js'
 
 // ---------------------------------------------------------------------------
 // Root route
@@ -27,6 +34,13 @@ async function requireAuth() {
   return session
 }
 
+const authenticatedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'authenticated',
+  component: AppShell,
+  beforeLoad: requireAuth,
+})
+
 // ---------------------------------------------------------------------------
 // /login — pública
 // ---------------------------------------------------------------------------
@@ -45,11 +59,23 @@ const loginRoute = createRoute({
 // /dashboard — protegida
 // ---------------------------------------------------------------------------
 const dashboardRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => authenticatedRoute,
   path: '/dashboard',
   component: DashboardPage,
   beforeLoad: requireAuth,
 })
+
+const profileRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/profile',
+  component: ProfilePage,
+})
+
+const membersRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/members', component: MembersPage })
+const newMemberRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/members/new', component: NewMemberPage })
+const memberDetailRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/members/$memberId', component: MemberDetailPage })
+const rolesRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/roles', component: RolesPage })
+const presenceRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/presence', component: PresencePage })
 
 // ---------------------------------------------------------------------------
 // / → redireciona para /dashboard
@@ -66,7 +92,7 @@ const indexRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
-  dashboardRoute,
+  authenticatedRoute.addChildren([dashboardRoute, profileRoute, membersRoute, newMemberRoute, memberDetailRoute, rolesRoute, presenceRoute]),
 ])
 
 export const router = createRouter({ routeTree })

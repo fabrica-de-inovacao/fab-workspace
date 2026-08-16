@@ -1,8 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { authClient } from '../lib/auth-client.js'
 
 const { signIn } = authClient
+
+// Mensagens de erro mapeadas dos query params do Better Auth
+const ERROR_MESSAGES: Record<string, string> = {
+  account_not_linked:
+    'Conta Google não vinculada. Faça login com email e senha e vincule o Google no seu perfil.',
+  user_not_found:
+    'Nenhuma conta encontrada com este email Google. Solicite acesso ao administrador.',
+  sign_up_disabled:
+    'Cadastro não permitido. Solicite acesso ao administrador.',
+  invalid_email_or_password:
+    'Email/CPF ou senha incorretos.',
+}
 
 export function LoginPage() {
   const router = useRouter()
@@ -11,6 +23,17 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+
+  // Lê erro vindo do callback OAuth (ex: ?error=account_not_linked)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const errorCode = params.get('error')
+    if (errorCode) {
+      setError(ERROR_MESSAGES[errorCode] ?? 'Erro ao autenticar. Tente novamente.')
+      // Remove o query param da URL sem recarregar
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   // -------------------------------------------------------------------------
   // Login com email ou CPF
@@ -21,14 +44,12 @@ export function LoginPage() {
     setLoading(true)
 
     try {
-      // Resolve: CPF (só dígitos, 11 chars) → busca email via API
       const cleaned = identifier.replace(/\D/g, '')
       const isCpf = !identifier.includes('@') && cleaned.length === 11
 
       let emailToUse = identifier
 
       if (isCpf) {
-        // Busca o email pelo CPF antes de tentar o login
         const res = await fetch(`/api/members/email-by-cpf?cpf=${cleaned}`)
         if (!res.ok) {
           setError('CPF não encontrado. Verifique e tente novamente.')
@@ -44,7 +65,7 @@ export function LoginPage() {
       })
 
       if (authError) {
-        setError('Email/CPF ou senha incorretos.')
+        setError(ERROR_MESSAGES[authError.code ?? ''] ?? 'Email/CPF ou senha incorretos.')
         return
       }
 
@@ -57,14 +78,18 @@ export function LoginPage() {
   }
 
   // -------------------------------------------------------------------------
-  // Login com Google
+  // Login com Google — só funciona se o usuário já vinculou em /profile
+  // Erros (account_not_linked, sign_up_disabled) voltam via query param
   // -------------------------------------------------------------------------
   async function handleGoogle() {
     setGoogleLoading(true)
     await signIn.social({
       provider: 'google',
       callbackURL: `${window.location.origin}/dashboard`,
+      errorCallbackURL: `${window.location.origin}/login`,
     })
+    // Se chegou aqui sem redirecionar, algo falhou
+    setGoogleLoading(false)
   }
 
   return (
@@ -78,7 +103,7 @@ export function LoginPage() {
         {/* Logo / Header */}
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
-            {/* ponytail: SVG inline simples até logo real existir */}
+            {/* ponytail: SVG placeholder até logo real existir */}
             <svg viewBox="0 0 24 24" className="h-7 w-7 text-white" fill="currentColor">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
             </svg>
@@ -133,12 +158,11 @@ export function LoginPage() {
 
           {/* Erro inline */}
           {error && (
-            <p className="rounded-lg bg-red-500/20 px-3 py-2 text-xs text-red-100">
-              {error}
-            </p>
+            <div className="rounded-lg bg-red-500/20 px-3 py-2.5">
+              <p className="text-xs leading-relaxed text-red-100">{error}</p>
+            </div>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -155,15 +179,14 @@ export function LoginPage() {
           <div className="h-px flex-1 bg-white/20" />
         </div>
 
-        {/* Google */}
+        {/* Google — só entra quem tem vínculo ativo */}
         <button
           type="button"
           onClick={handleGoogle}
           disabled={googleLoading}
           className="flex w-full items-center justify-center gap-2.5 rounded-full border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-light text-white transition-all hover:bg-white/20 disabled:opacity-60"
         >
-          {/* Google icon */}
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+          <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>

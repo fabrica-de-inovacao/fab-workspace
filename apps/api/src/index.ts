@@ -2,12 +2,20 @@ import './env.js' // valida env na startup — falha rápido se algo estiver err
 import { serve } from '@hono/node-server'
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { cors } from 'hono/cors'
+import { getConnInfo } from '@hono/node-server/conninfo'
+import { rateLimiter } from 'hono-rate-limiter'
 import { env } from './env.js'
 import { auth } from './lib/auth.js'
+import { bootstrapRouter } from './routes/bootstrap.js'
+import { membersRouter } from './routes/members.js'
+import { presenceRouter } from './routes/presence.js'
 import { db } from '@fabrica/db'
 import { sql } from 'drizzle-orm'
+import { securityHeaders } from './middleware/security.js'
 
 const app = new OpenAPIHono()
+
+app.use('*', securityHeaders)
 
 // ---------------------------------------------------------------------------
 // CORS — permite o admin-panel chamar a API
@@ -22,10 +30,30 @@ app.use('*', cors({
   credentials: true, // necessário para cookies de sessão
 }))
 
+const authRateLimit = rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  keyGenerator: (c) => {
+    if (env.TRUST_PROXY) {
+      return c.req.header('cf-connecting-ip')
+        ?? c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
+        ?? 'unknown'
+    }
+    return getConnInfo(c).remote.address ?? 'unknown'
+  },
+})
+
+app.use('/api/auth/sign-in/*', authRateLimit)
+app.use('/api/auth/sign-up/*', authRateLimit)
+app.use('/api/bootstrap/admin', authRateLimit)
+
 // ---------------------------------------------------------------------------
 // Better Auth — intercepta todo /api/auth/**
 // ---------------------------------------------------------------------------
 app.on(['GET', 'POST'], '/api/auth/**', (c) => auth.handler(c.req.raw))
+app.route('/', bootstrapRouter)
+app.route('/', membersRouter)
+app.route('/', presenceRouter)
 
 // ---------------------------------------------------------------------------
 // Health check

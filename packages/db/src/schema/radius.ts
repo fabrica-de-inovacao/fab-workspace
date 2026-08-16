@@ -7,6 +7,7 @@ import {
   bigint,
   timestamp,
   inet,
+  index,
 } from 'drizzle-orm/pg-core'
 
 // ---------------------------------------------------------------------------
@@ -19,24 +20,32 @@ import {
 // ---------------------------------------------------------------------------
 // radcheck — credenciais de autenticação Wi-Fi
 // ---------------------------------------------------------------------------
-export const radcheck = pgTable('radcheck', {
-  id: serial('id').primaryKey(),
-  username: varchar('username', { length: 64 }).notNull(), // email do membro
-  attribute: varchar('attribute', { length: 64 }).notNull(), // sempre 'Cleartext-Password'
-  op: varchar('op', { length: 2 }).notNull(),               // sempre ':='
-  value: varchar('value', { length: 253 }).notNull(),        // senha gerada para Wi-Fi
-})
+export const radcheck = pgTable(
+  'radcheck',
+  {
+    id: serial('id').primaryKey(),
+    username: varchar('username', { length: 64 }).notNull(),
+    attribute: varchar('attribute', { length: 64 }).notNull(),
+    op: varchar('op', { length: 2 }).notNull(),
+    value: varchar('value', { length: 253 }).notNull(),
+  },
+  (table) => [index('radcheck_username_idx').on(table.username)],
+)
 
 // ---------------------------------------------------------------------------
 // radreply — atributos pós-autenticação (rate limits, timeouts)
 // ---------------------------------------------------------------------------
-export const radreply = pgTable('radreply', {
-  id: serial('id').primaryKey(),
-  username: varchar('username', { length: 64 }).notNull(), // email do membro
-  attribute: varchar('attribute', { length: 64 }).notNull(), // ex: 'Mikrotik-Rate-Limit'
-  op: varchar('op', { length: 2 }).notNull(),               // sempre '='
-  value: varchar('value', { length: 253 }).notNull(),        // ex: '20M/20M'
-})
+export const radreply = pgTable(
+  'radreply',
+  {
+    id: serial('id').primaryKey(),
+    username: varchar('username', { length: 64 }).notNull(),
+    attribute: varchar('attribute', { length: 64 }).notNull(),
+    op: varchar('op', { length: 2 }).notNull(),
+    value: varchar('value', { length: 253 }).notNull(),
+  },
+  (table) => [index('radreply_username_idx').on(table.username)],
+)
 
 // ---------------------------------------------------------------------------
 // radusergroup — associação de usuário a grupo RADIUS

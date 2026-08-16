@@ -40,6 +40,11 @@
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+@keyframes navigation {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(400%); }
+}
+
 /* ── Base ──────────────────────────────────────────────── */
 @layer base {
   html {

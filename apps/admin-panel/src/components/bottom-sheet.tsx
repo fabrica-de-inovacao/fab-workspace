@@ -1,0 +1,5 @@
+import * as Dialog from '@radix-ui/react-dialog'
+
+export function BottomSheet({ trigger, title, children }: { trigger: React.ReactNode; title: string; children: React.ReactNode }) {
+  return <Dialog.Root><Dialog.Trigger asChild>{trigger}</Dialog.Trigger><Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-50 bg-ink/35 backdrop-blur-[2px]" /><Dialog.Content className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface p-6 shadow-2xl sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"><div className="mx-auto mb-5 h-1 w-10 rounded-full bg-hairline-input sm:hidden" /><div className="flex items-center justify-between"><Dialog.Title className="text-xl font-light tracking-tight text-ink">{title}</Dialog.Title><Dialog.Close className="rounded-full border border-hairline-input px-3 py-1.5 text-xs text-ink-muted">Fechar</Dialog.Close></div><div className="mt-5">{children}</div></Dialog.Content></Dialog.Portal></Dialog.Root>
+}

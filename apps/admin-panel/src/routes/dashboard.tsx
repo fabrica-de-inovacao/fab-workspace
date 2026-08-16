@@ -1,42 +1,14 @@
-import { useRouter } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { authClient } from '../lib/auth-client.js'
 
-const { signOut, useSession } = authClient
+const { useSession } = authClient
 
 export function DashboardPage() {
-  const router = useRouter()
   const { data: session } = useSession()
 
-  async function handleLogout() {
-    await signOut()
-    await router.navigate({ to: '/login' })
-  }
-
   return (
-    <div className="flex min-h-screen flex-col bg-surface-soft">
-      {/* Header provisório — Sprint 3 monta o AppShell completo */}
-      <div className="flex items-center justify-between border-b border-hairline bg-surface px-6 py-4">
-        <div>
-          <h1 className="text-lg font-light tracking-tight text-ink">
-            FAB Workspace
-          </h1>
-          <p className="text-xs text-ink-muted">Painel Administrativo</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-light text-ink-muted">
-            {session?.user?.email}
-          </span>
-          <button
-            onClick={handleLogout}
-            className="rounded-full border border-hairline-input px-3 py-1.5 text-xs font-normal text-ink-muted transition-colors hover:border-primary hover:text-primary"
-          >
-            Sair
-          </button>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="flex flex-1 items-center justify-center p-8">
+    <div className="min-h-full p-4 sm:p-6">
+      <div className="flex min-h-[calc(100vh-3rem)] items-center justify-center">
         <div className="rounded-2xl border border-hairline bg-surface p-8 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-soft text-secondary-700 text-sm font-normal">
@@ -51,9 +23,10 @@ export function DashboardPage() {
           </div>
           <div className="mt-6 rounded-lg bg-surface-soft px-4 py-3">
             <p className="text-xs text-ink-muted">
-              Sprint 1 ✓ — Auth funcionando. Shell UI na Sprint 3.
+              Bem-vindo ao painel. Gerencie membros, acessos e perfis na navegação lateral.
             </p>
           </div>
+          <Link to="/members" className="mt-5 inline-flex rounded-full bg-primary px-4 py-2 text-sm text-white">Gerenciar membros</Link>
         </div>
       </div>
     </div>
