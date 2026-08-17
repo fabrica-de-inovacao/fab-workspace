@@ -1,43 +1,98 @@
 import { useState } from 'react'
-import { Plus, Sliders } from 'lucide-react'
+import { Eye, Pencil, Plus } from 'lucide-react'
 import { useCreateWifiProfile, useWifiProfiles } from '../hooks/use-members.js'
 import type { WifiProfile } from '../lib/api.js'
 import { DataTable, type Column, type SortState } from '../components/data-table.js'
+import { DropdownMenu } from '../components/dropdown-menu.js'
+import { Drawer } from '../components/drawer.js'
 import { EmptyState, SkeletonRow } from '../components/feedback.js'
+import { FormSelect } from '../components/form-select.js'
 import { PageBody, PageFooter, PageHeader, PageShell } from '../components/page.js'
-
-const columns: Column<WifiProfile>[] = [
-  { key: 'name', header: 'Perfil de Rede', sortValue: (row) => row.name, render: (row) => <div><p className="text-sm font-normal text-ink">{row.name}</p><p className="text-xs text-ink-muted">{row.description || 'Sem descrição'}</p></div> },
-  { key: 'rateLimit', header: 'Limite de Velocidade', sortValue: (row) => row.wifiRateLimit ?? '', render: (row) => <span className="font-mono text-xs text-primary">{row.wifiRateLimit || 'Sem limite (Ilimitado)'}</span> },
-  { key: 'sessionTimeout', header: 'Timeout de Sessão', sortValue: (row) => row.wifiSessionTimeout ?? 0, numeric: true, render: (row) => <span className="text-sm text-ink-muted">{formatTimeout(row.wifiSessionTimeout)}</span> },
-]
+import { SearchInput } from '../components/search-input.js'
+import { WifiProfileDetailDrawer } from '../components/wifi-profile-detail-drawer.js'
+import {
+  SPEED_PRESETS, TIMEOUT_PRESETS,
+  buildSpeedValue, buildTimeoutValue,
+  formatTimeoutLong,
+} from '../lib/wifi-presets.js'
 
 export function WifiProfilesPage() {
-  const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [wifiRateLimit, setWifiRateLimit] = useState('')
-  const [wifiSessionTimeout, setWifiSessionTimeout] = useState('')
+  const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortState>({ key: 'name', direction: 'asc' })
+  const [selectedProfile, setSelectedProfile] = useState<WifiProfile | null>(null)
+  const [selectedEdit, setSelectedEdit] = useState(false)
 
   const profiles = useWifiProfiles()
   const createProfile = useCreateWifiProfile()
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    if (!name.trim()) return
-    await createProfile.mutateAsync({
-      name,
-      description: description || null,
-      wifiRateLimit: wifiRateLimit || null,
-      wifiSessionTimeout: wifiSessionTimeout ? Number(wifiSessionTimeout) : null,
-    })
+  // Create drawer
+  const [createOpen, setCreateOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [speedPreset, setSpeedPreset] = useState('')
+  const [customDown, setCustomDown] = useState('')
+  const [customUp, setCustomUp] = useState('')
+  const [timeoutPreset, setTimeoutPreset] = useState('604800')
+  const [customDays, setCustomDays] = useState('')
+  const [customHours, setCustomHours] = useState('')
+  const [customMinutes, setCustomMinutes] = useState('')
+
+  function resetCreateForm() {
     setName('')
     setDescription('')
-    setWifiRateLimit('')
-    setWifiSessionTimeout('')
-    setOpen(false)
+    setSpeedPreset('')
+    setCustomDown('')
+    setCustomUp('')
+    setTimeoutPreset('604800')
+    setCustomDays('')
+    setCustomHours('')
+    setCustomMinutes('')
   }
+
+  async function handleCreate() {
+    if (!name.trim()) return
+    await createProfile.mutateAsync({
+      name: name.trim(),
+      description: description.trim() || null,
+      wifiRateLimit: buildSpeedValue(speedPreset, customDown, customUp),
+      wifiSessionTimeout: buildTimeoutValue(timeoutPreset, customDays, customHours, customMinutes),
+    })
+    resetCreateForm()
+    setCreateOpen(false)
+  }
+
+  function openProfile(profile: WifiProfile, edit = false) {
+    setSelectedProfile(profile)
+    setSelectedEdit(edit)
+  }
+
+  const filtered = profiles.data?.data.filter((p) =>
+    !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase())
+  ) ?? []
+
+  const columns: Column<WifiProfile>[] = [
+    { key: 'name', header: 'Perfil', sortValue: (p) => p.name, render: (p) => (
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+          {p.name[0]}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm text-ink">{p.name}</p>
+          <p className="mt-0.5 truncate text-xs text-ink-muted">{p.description || 'Sem descrição'}</p>
+        </div>
+      </div>
+    )},
+    { key: 'rateLimit', header: 'Velocidade', sortValue: (p) => p.wifiRateLimit ?? '', render: (p) => <span className="rounded-md bg-surface-soft px-2 py-0.5 font-mono text-xs text-primary">{p.wifiRateLimit || 'Ilimitado'}</span> },
+    { key: 'sessionTimeout', header: 'Sessão máxima', sortValue: (p) => p.wifiSessionTimeout ?? 0, numeric: true, render: (p) => <span className="text-sm text-ink-muted">{formatTimeoutLong(p.wifiSessionTimeout)}</span> },
+    { key: 'action', header: '', align: 'right', render: (p) => (
+      <DropdownMenu actions={[
+        { label: 'Ver detalhes', icon: <Eye size={14} />, onClick: () => openProfile(p, false) },
+        { label: 'Editar', icon: <Pencil size={14} />, onClick: () => openProfile(p, true) },
+      ]} />
+    )},
+  ]
+
+  const inputBase = 'w-full rounded-lg border border-hairline-input bg-surface px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-ink-muted/50 focus:border-primary h-9'
 
   return (
     <PageShell>
@@ -46,115 +101,122 @@ export function WifiProfilesPage() {
         title="Perfis de Rede Wi-Fi"
         subtitle="Regras de banda e limite de tempo aplicadas no MikroTik / FreeRADIUS."
         actions={
-          <button
-            onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm text-white hover:bg-primary-hover transition-colors"
-          >
+          <button onClick={() => setCreateOpen(true)} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-normal text-white hover:bg-primary-hover transition-colors">
             <Plus size={16} />
-            <span>Novo perfil de rede</span>
+            <span>Novo perfil</span>
           </button>
         }
       />
       <PageBody>
-        {open && (
-          <form onSubmit={handleCreate} className="mb-6 rounded-xl border border-hairline bg-surface p-5 shadow-sm space-y-4">
-            <h3 className="text-base font-normal text-ink">Criar perfil de rede</h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-normal text-ink-muted mb-1">Nome do perfil</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: Padrão 20M, Visitante 5M"
-                  required
-                  className="w-full rounded-lg border border-hairline-input px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-normal text-ink-muted mb-1">Limite de velocidade (Rx/Tx)</label>
-                <input
-                  value={wifiRateLimit}
-                  onChange={(e) => setWifiRateLimit(e.target.value)}
-                  placeholder="Ex: 20M/20M ou 10M/5M"
-                  className="w-full rounded-lg border border-hairline-input px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-normal text-ink-muted mb-1">Timeout de sessão (em segundos)</label>
-                <input
-                  type="number"
-                  value={wifiSessionTimeout}
-                  onChange={(e) => setWifiSessionTimeout(e.target.value)}
-                  placeholder="Ex: 7200 (2 horas) ou deixe vazio"
-                  className="w-full rounded-lg border border-hairline-input px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-normal text-ink-muted mb-1">Descrição</label>
-                <input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descrição opcional do plano"
-                  className="w-full rounded-lg border border-hairline-input px-3 py-2 text-sm outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-            {createProfile.error && <p className="text-xs text-error">{createProfile.error.message}</p>}
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-full border border-hairline-input px-4 py-2 text-xs text-ink-muted hover:border-primary"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={createProfile.isPending}
-                className="rounded-full bg-primary px-4 py-2 text-xs text-white hover:bg-primary-hover disabled:opacity-50"
-              >
-                {createProfile.isPending ? 'Salvando...' : 'Salvar perfil'}
-              </button>
-            </div>
-          </form>
-        )}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome ou descrição" />
+        </div>
 
-        <div className="rounded-xl border border-hairline">
+        <div className="mt-5 rounded-xl border border-hairline">
           {profiles.isPending ? (
-            <div className="space-y-3 p-4">
-              {[1, 2, 3].map((row) => (
-                <SkeletonRow key={row} />
-              ))}
-            </div>
+            <div className="space-y-3 p-4">{[1, 2, 3].map((row) => <SkeletonRow key={row} />)}</div>
           ) : profiles.error ? (
             <p className="p-6 text-sm text-error">{profiles.error.message}</p>
-          ) : profiles.data.data.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <EmptyState
-              title="Nenhum perfil de rede cadastrado"
-              description="Crie um perfil para definir velocidades e limites de tempo Wi-Fi para os membros."
-              action={
-                <button onClick={() => setOpen(true)} className="rounded-full bg-primary px-4 py-2 text-sm text-white">
-                  Novo perfil de rede
-                </button>
-              }
+              title="Nenhum perfil cadastrado"
+              description="Crie um perfil para definir velocidades e limites de tempo Wi-Fi."
+              action={<button onClick={() => setCreateOpen(true)} className="rounded-full bg-primary px-4 py-2 text-sm text-white">Novo perfil</button>}
             />
           ) : (
-            <DataTable rows={profiles.data.data} columns={columns} sort={sort} onSort={setSort} getRowKey={(row) => String(row.id)} />
+            <DataTable rows={filtered} columns={columns} sort={sort} onSort={setSort} getRowKey={(p) => String(p.id)} />
           )}
         </div>
+
+        {/* Drawer criar perfil */}
+        <Drawer
+          open={createOpen}
+          onOpenChange={(v) => { if (!v) resetCreateForm(); setCreateOpen(v) }}
+          title="Novo perfil de rede"
+          subtitle="Defina as regras de banda e limite de tempo."
+          size="lg"
+          footer={
+            <>
+              <button type="button" onClick={() => setCreateOpen(false)} className="h-9 shrink-0 rounded-full border border-hairline-input px-4 text-sm text-ink-muted transition-colors hover:border-primary hover:text-ink">
+                Cancelar
+              </button>
+              <button type="button" onClick={handleCreate} disabled={createProfile.isPending || !name.trim()} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50">
+                {createProfile.isPending ? 'Salvando...' : 'Criar perfil'}
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <FormField label="Nome do perfil" required>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Padrão 20M, Visitante 5M" className={inputBase} />
+            </FormField>
+
+            <FormField label="Descrição" optional>
+              <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição do plano" className={inputBase} />
+            </FormField>
+
+            <FormField label="Limite de velocidade" optional>
+              <FormSelect value={speedPreset} onChange={setSpeedPreset} placeholder="Selecione" options={SPEED_PRESETS.map((p) => ({ value: p.value, label: p.label }))} />
+            </FormField>
+            {speedPreset === '__custom__' && (
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Download" optional>
+                  <div className="relative">
+                    <input type="text" value={customDown} onChange={(e) => setCustomDown(e.target.value)} placeholder="Ex: 20" className={`${inputBase} pr-7`} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted/50">Mbps</span>
+                  </div>
+                </FormField>
+                <FormField label="Upload" optional>
+                  <div className="relative">
+                    <input type="text" value={customUp} onChange={(e) => setCustomUp(e.target.value)} placeholder="Ex: 10" className={`${inputBase} pr-7`} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted/50">Mbps</span>
+                  </div>
+                </FormField>
+              </div>
+            )}
+
+            <FormField label="Duração máxima da sessão" optional>
+              <FormSelect value={timeoutPreset} onChange={setTimeoutPreset} placeholder="Selecione" options={TIMEOUT_PRESETS.map((p) => ({ value: p.value, label: p.label }))} />
+            </FormField>
+            {timeoutPreset === '__custom__' && (
+              <div className="grid grid-cols-3 gap-3">
+                <FormField label="Dias" optional>
+                  <input type="number" min="0" value={customDays} onChange={(e) => setCustomDays(e.target.value)} placeholder="0" className={inputBase} />
+                </FormField>
+                <FormField label="Horas" optional>
+                  <input type="number" min="0" max="23" value={customHours} onChange={(e) => setCustomHours(e.target.value)} placeholder="0" className={inputBase} />
+                </FormField>
+                <FormField label="Minutos" optional>
+                  <input type="number" min="0" max="59" value={customMinutes} onChange={(e) => setCustomMinutes(e.target.value)} placeholder="0" className={inputBase} />
+                </FormField>
+              </div>
+            )}
+
+            {createProfile.error && <p className="text-xs text-error">{createProfile.error.message}</p>}
+          </div>
+        </Drawer>
+
+        <WifiProfileDetailDrawer
+          open={!!selectedProfile}
+          onOpenChange={(v) => { if (!v) setSelectedProfile(null) }}
+          profile={selectedProfile}
+          defaultEdit={selectedEdit}
+          onRefresh={() => profiles.refetch()}
+        />
       </PageBody>
-      <PageFooter>{profiles.data?.data.length ?? 0} perfil(is) de rede Wi-Fi cadastrado(s)</PageFooter>
+      <PageFooter>{filtered.length} perfil(is) de rede cadastrado(s)</PageFooter>
     </PageShell>
   )
 }
 
-function formatTimeout(seconds: number | null) {
-  if (!seconds) return 'Sem limite'
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  if (hours && minutes) return `${hours}h ${minutes}min (${seconds}s)`
-  if (hours) return `${hours}h (${seconds}s)`
-  return `${minutes}min (${seconds}s)`
+function FormField({ label, required, optional, children }: { label: string; required?: boolean; optional?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs text-ink-muted">
+        {label} {required && <span className="text-red-500">*</span>}
+        {optional && <span className="text-ink-muted/60">(opcional)</span>}
+      </label>
+      {children}
+    </div>
+  )
 }

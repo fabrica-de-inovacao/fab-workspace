@@ -1,26 +1,27 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, Outlet, useLocation, useRouter, useRouterState } from '@tanstack/react-router'
-import { ChevronDown, ChevronRight, LayoutDashboard, LogOut, Menu, Radio, Settings, Sliders, Users, Wifi, X } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Settings, Sliders, Sun, Users, Wifi, X } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { authClient } from '../lib/auth-client.js'
-
-const topNavigation = [
-  { to: '/dashboard', label: 'Visão geral', icon: LayoutDashboard },
-] as const
+import { SettingsDialog } from './settings-dialog.js'
 
 const navGroups = [
   {
-    title: 'Gestão de Membros',
-    icon: Users,
+    title: 'Principal',
+    items: [
+      { to: '/dashboard', label: 'Visão geral', icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: 'Membros',
     items: [
       { to: '/members', label: 'Membros', icon: Users },
     ],
   },
   {
-    title: 'Gestão de Rede',
-    icon: Radio,
+    title: 'Rede',
     items: [
-      { to: '/wifi-profiles', label: 'Perfis de rede Wi-Fi', icon: Sliders },
+      { to: '/wifi-profiles', label: 'Perfis Wi-Fi', icon: Sliders },
       { to: '/presence', label: 'Presença Wi-Fi', icon: Wifi },
     ],
   },
@@ -33,9 +34,14 @@ export function AppShell() {
   const { data: session } = authClient.useSession()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    'Gestão de Membros': true,
-    'Gestão de Rede': true,
+    'Principal': true,
+    'Membros': true,
+    'Rede': true,
   })
 
   function toggleGroup(title: string) {
@@ -47,100 +53,100 @@ export function AppShell() {
     await router.navigate({ to: '/login' })
   }
 
+  function isActive(to: string) {
+    if (to === '/members') return location.pathname === to || location.pathname.startsWith('/members/')
+    return location.pathname === to
+  }
+
+  // Fecha menu do usuário ao clicar fora
+  useEffect(() => {
+    if (!userMenuOpen) return
+    function handleClick(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [userMenuOpen])
+
   const sidebar = (
-    <aside className={`flex h-full flex-col border-r border-hairline bg-surface transition-[width] duration-200 ease-out ${collapsed ? 'w-16' : 'w-60'}`}>
-      <div className="flex h-16 items-center justify-between border-b border-hairline px-4">
+    <aside className={`flex h-full flex-col transition-[width] duration-200 ease-out ${collapsed ? 'w-16' : 'w-60'}`}>
+      {/* Header */}
+      <div className={`flex h-14 shrink-0 items-center ${collapsed ? 'justify-center' : 'px-4'}`}>
         {!collapsed && (
-          <div className="flex items-center gap-2.5">
-            <img src="/branding/fabitz_logo.svg" alt="" className="h-8 w-auto shrink-0" />
-            <div>
-              <p className="text-sm font-normal tracking-tight text-ink">FabITZ Workspace</p>
-              <p className="text-[10px] uppercase tracking-widest text-ink-muted">Fábrica de Inovação</p>
+          <div className="flex flex-1 items-center gap-2.5">
+            <img src="/branding/fabitz_logo.svg" alt="" className="h-7 w-auto shrink-0" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium tracking-tight text-ink">FabITZ</p>
+              <p className="text-[9px] uppercase tracking-widest text-ink-muted/50">Workspace</p>
             </div>
           </div>
         )}
-        <button onClick={() => setCollapsed((value) => !value)} className="hidden rounded-lg p-2 text-ink-muted hover:bg-surface-soft hover:text-primary lg:block" aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}><Menu size={18} /></button>
-        <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-ink-muted lg:hidden" aria-label="Fechar menu"><X size={18} /></button>
+        <button
+          onClick={() => setCollapsed((v) => !v)}
+          className="hidden shrink-0 rounded-lg p-1.5 text-ink-muted/50 transition-colors hover:bg-white/60 hover:text-ink lg:block"
+          aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+        >
+          {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+        </button>
+        <button onClick={() => setMobileOpen(false)} className="shrink-0 rounded-lg p-1.5 text-ink-muted/50 lg:hidden" aria-label="Fechar">
+          <X size={16} />
+        </button>
       </div>
 
-      <Tooltip.Provider delayDuration={250}>
-        <nav className="flex-1 space-y-3 overflow-y-auto p-2">
-          <div className="space-y-1">
-            {topNavigation.map((item) => {
-              const active = location.pathname === item.to
-              const content = (
-                <Link
-                  to={item.to}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex h-10 items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-150 ${
-                    active ? 'bg-primary-soft text-primary' : 'text-ink-muted hover:bg-surface-soft hover:text-ink'
-                  } ${collapsed ? 'justify-center' : ''}`}
-                >
-                  <item.icon size={18} strokeWidth={1.8} />
-                  {!collapsed && <span>{item.label}</span>}
-                </Link>
-              )
-              return collapsed ? (
-                <Tooltip.Root key={item.to}>
-                  <Tooltip.Trigger asChild>{content}</Tooltip.Trigger>
-                  <Tooltip.Portal>
-                    <Tooltip.Content side="right" sideOffset={8} className="z-50 rounded-md bg-ink px-2.5 py-1.5 text-xs text-white shadow-lg">
-                      {item.label}
-                      <Tooltip.Arrow className="fill-ink" />
-                    </Tooltip.Content>
-                  </Tooltip.Portal>
-                </Tooltip.Root>
-              ) : (
-                <div key={item.to}>{content}</div>
-              )
-            })}
-          </div>
-
+      {/* Nav */}
+      <Tooltip.Provider delayDuration={300}>
+        <nav className="flex-1 space-y-3 overflow-y-auto px-4 py-2">
           {navGroups.map((group) => {
             const isExpanded = expandedGroups[group.title] ?? true
-            const hasActiveChild = group.items.some((item) => location.pathname === item.to || (item.to === '/members' && location.pathname.startsWith('/members/')))
+            const hasActiveChild = group.items.some((item) => isActive(item.to))
 
             return (
-              <div key={group.title} className="space-y-1">
+              <div key={group.title}>
                 {!collapsed ? (
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.title)}
-                    className="flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-normal uppercase tracking-widest text-ink-muted hover:text-ink transition-colors"
+                    className={`flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+                      hasActiveChild ? 'text-primary/60' : 'text-ink-muted/40 hover:text-ink-muted/70'
+                    }`}
                   >
-                    <span>{group.title}</span>
-                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    <ChevronDown size={11} className={`shrink-0 transition-transform duration-150 ${isExpanded ? '' : '-rotate-90'}`} />
+                    <span className="flex-1 text-left">{group.title}</span>
                   </button>
-                ) : null}
+                ) : (
+                  <div className="mx-auto my-2 h-px w-5 rounded-full bg-ink-muted/15" />
+                )}
 
                 {(isExpanded || collapsed) && (
-                  <div className="space-y-1 pl-0">
+                  <div className="mt-0.5 space-y-0.5">
                     {group.items.map((item) => {
-                      const active = location.pathname === item.to || (item.to === '/members' && location.pathname.startsWith('/members/'))
-                      const content = (
+                      const active = isActive(item.to)
+                      const link = (
                         <Link
                           to={item.to}
                           onClick={() => setMobileOpen(false)}
-                          className={`flex h-10 items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-150 ${
-                            active ? 'bg-primary-soft text-primary font-normal' : 'text-ink-muted hover:bg-surface-soft hover:text-ink'
-                          } ${collapsed ? 'justify-center' : ''}`}
+                          className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] transition-all duration-150 ${
+                            active
+                              ? 'bg-white/80 font-medium text-primary shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+                              : 'text-ink-muted hover:bg-white/50 hover:text-ink'
+                          } ${collapsed ? 'justify-center px-0' : ''}`}
                         >
-                          <item.icon size={18} strokeWidth={1.8} />
+                          <item.icon size={16} strokeWidth={active ? 1.8 : 1.5} className={`shrink-0 transition-colors ${active ? 'text-primary' : 'text-ink-muted/60 group-hover:text-ink-muted'}`} />
                           {!collapsed && <span>{item.label}</span>}
                         </Link>
                       )
                       return collapsed ? (
                         <Tooltip.Root key={item.to}>
-                          <Tooltip.Trigger asChild>{content}</Tooltip.Trigger>
+                          <Tooltip.Trigger asChild>{link}</Tooltip.Trigger>
                           <Tooltip.Portal>
-                            <Tooltip.Content side="right" sideOffset={8} className="z-50 rounded-md bg-ink px-2.5 py-1.5 text-xs text-white shadow-lg">
+                            <Tooltip.Content side="right" sideOffset={8} className="z-50 rounded-lg bg-ink px-2.5 py-1.5 text-xs text-white shadow-lg">
                               {item.label}
                               <Tooltip.Arrow className="fill-ink" />
                             </Tooltip.Content>
                           </Tooltip.Portal>
                         </Tooltip.Root>
                       ) : (
-                        <div key={item.to}>{content}</div>
+                        <div key={item.to}>{link}</div>
                       )
                     })}
                   </div>
@@ -151,28 +157,69 @@ export function AppShell() {
         </nav>
       </Tooltip.Provider>
 
-      <div className="border-t border-hairline p-2">
-        <div className={`flex items-center gap-3 rounded-xl p-2 ${collapsed ? 'justify-center' : ''}`}>
-          {session?.user.image ? (
-            <img src={session.user.image} alt="" className="h-9 w-9 rounded-full object-cover" />
-          ) : (
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm text-primary">
-              {session?.user.name?.[0] ?? '?'}
+      {/* Footer — sessão do usuário */}
+      <div className="shrink-0 border-t border-ink-muted/10 px-2 py-2">
+        <div ref={userMenuRef} className="relative">
+          <button
+            type="button"
+            onClick={() => !collapsed && setUserMenuOpen((o) => !o)}
+            className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-white/50 ${collapsed ? 'justify-center px-0' : ''}`}
+          >
+            {session?.user.image ? (
+              <img src={session.user.image} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white/60" />
+            ) : (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                {session?.user.name?.[0] ?? '?'}
+              </div>
+            )}
+            {!collapsed && (
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-[13px] font-medium text-ink">{session?.user.name}</p>
+                <p className="truncate text-[10px] text-ink-muted/50">{session?.user.email}</p>
+              </div>
+            )}
+          </button>
+
+          {/* Menu suspenso do usuário */}
+          {userMenuOpen && !collapsed && (
+            <div className="absolute bottom-full left-0 mb-1 w-56 rounded-xl border border-hairline bg-surface py-1 shadow-lg">
+              <div className="border-b border-hairline px-3 py-2.5">
+                <p className="text-xs font-medium text-ink">{session?.user.name}</p>
+                <p className="text-[10px] text-ink-muted/60">{session?.user.email}</p>
+              </div>
+
+              <div className="py-1">
+                <button
+                  type="button"
+                  onClick={() => { setSettingsOpen(true); setUserMenuOpen(false) }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-ink transition-colors hover:bg-surface-soft"
+                >
+                  <Settings size={14} className="text-ink-muted/50" />
+                  Configurações
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setDarkMode((v) => !v); setUserMenuOpen(false) }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-ink transition-colors hover:bg-surface-soft"
+                >
+                  {darkMode ? <Sun size={14} className="text-ink-muted/50" /> : <Moon size={14} className="text-ink-muted/50" />}
+                  {darkMode ? 'Modo claro' : 'Modo escuro'}
+                </button>
+
+              </div>
+
+              <div className="border-t border-hairline py-1">
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-error transition-colors hover:bg-error-soft"
+                >
+                  <LogOut size={14} />
+                  Sair da conta
+                </button>
+              </div>
             </div>
-          )}
-          {!collapsed && (
-            <Link to="/profile" className="min-w-0 flex-1 rounded-md hover:opacity-80 transition-opacity">
-              <p className="truncate text-xs font-normal text-ink">{session?.user.name}</p>
-              <p className="truncate text-[10px] text-ink-muted">{session?.user.email}</p>
-              <span className="mt-1 inline-flex rounded-full bg-primary-soft px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-primary">
-                Meu Perfil
-              </span>
-            </Link>
-          )}
-          {!collapsed && (
-            <button onClick={logout} className="rounded-lg p-2 text-ink-muted hover:bg-error-soft hover:text-error transition-colors" aria-label="Sair">
-              <LogOut size={16} />
-            </button>
           )}
         </div>
       </div>
@@ -189,32 +236,31 @@ export function AppShell() {
       {/* Desktop sidebar */}
       <div className="hidden lg:block">{sidebar}</div>
 
-      {/* Mobile sidebar overlay */}
+      {/* Mobile sidebar */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <button className="absolute inset-0 bg-ink/35" onClick={() => setMobileOpen(false)} aria-label="Fechar menu" />
+          <button className="absolute inset-0 bg-ink/35" onClick={() => setMobileOpen(false)} aria-label="Fechar" />
           <div className="relative h-full w-60">{sidebar}</div>
         </div>
       )}
 
-      {/* Main content */}
+      {/* Content */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Mobile header */}
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-hairline bg-surface px-4 lg:hidden">
+        <header className="flex h-14 shrink-0 items-center border-b border-hairline bg-surface px-4 lg:hidden">
           <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-ink-muted">
-            <Menu size={20} />
+            <PanelLeftOpen size={20} />
           </button>
-          <p className="text-sm text-ink">FAB Workspace</p>
-          <Settings size={18} className="text-ink-muted" />
+          <p className="ml-2 text-sm font-medium text-ink">FAB Workspace</p>
         </header>
 
-        {/* Content container — fixo, cantos arredondados, scroll interno */}
         <div className="flex-1 overflow-hidden p-3 sm:p-4">
           <div className="flex h-full flex-col overflow-y-auto rounded-2xl border border-hairline bg-surface shadow-sm">
             <Outlet />
           </div>
         </div>
       </div>
+
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   )
 }
