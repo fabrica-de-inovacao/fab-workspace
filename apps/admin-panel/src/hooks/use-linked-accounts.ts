@@ -19,8 +19,8 @@ export function useLinkedAccounts() {
   async function refresh() {
     setLoading(true)
     const result = await authClient.listAccounts()
-    setAccounts((result.data ?? null) as LinkedAccount[] | null)
-    setError(result.error ? 'Não foi possível carregar os acessos vinculados.' : null)
+    setAccounts(Array.isArray(result) ? (result as LinkedAccount[]) : 'data' in result ? (result.data as LinkedAccount[] | null) : null)
+    setError(!Array.isArray(result) && 'error' in result && result.error ? 'Não foi possível carregar os acessos vinculados.' : null)
     setLoading(false)
   }
 

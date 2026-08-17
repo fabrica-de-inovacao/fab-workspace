@@ -4,16 +4,17 @@ import { db } from '@fabrica/db'
 import { users, sessions, accounts, verifications } from '@fabrica/db'
 import { eq } from 'drizzle-orm'
 import { env } from '../env.js'
+import { AUTH_PATH } from './paths.js'
 
 export const auth = betterAuth({
   // -------------------------------------------------------------------------
   // Base URL — Better Auth usa para montar callbacks e redirects
   // -------------------------------------------------------------------------
   baseURL: env.NODE_ENV === 'production'
-    ? 'https://workspace.fabitz.com.br'
+    ? 'https://api.workspace.fabitz.com.br'
     : 'http://localhost:3001',
 
-  basePath: '/api/auth',
+  basePath: AUTH_PATH,
 
   secret: env.BETTER_AUTH_SECRET,
 
@@ -129,6 +130,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     'http://localhost:5173',
     'https://workspace.fabitz.com.br',
+    'https://api.workspace.fabitz.com.br',
   ],
 })
 

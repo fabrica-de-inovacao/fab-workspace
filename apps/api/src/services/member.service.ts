@@ -4,10 +4,12 @@ import {
   radcheck,
   radreply,
   roles,
+  sessions,
   userRoles,
   users,
+  wifiProfiles,
 } from '@fabrica/db'
-import { and, asc, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 
 const WIFI_PASSWORD_BYTES = 12
 
@@ -17,6 +19,7 @@ export type CreateMemberInput = {
   cpf?: string | null | undefined
   phone?: string | null | undefined
   roleId: number
+  wifiProfileId?: number | null | undefined
 }
 
 export type UpdateMemberInput = {
@@ -25,6 +28,7 @@ export type UpdateMemberInput = {
   cpf?: string | null | undefined
   phone?: string | null | undefined
   roleId?: number | undefined
+  wifiProfileId?: number | null | undefined
 }
 
 export type ListMembersInput = {
@@ -33,6 +37,14 @@ export type ListMembersInput = {
   search?: string
   active?: boolean
   roleId?: number
+  wifiProfileId?: number
+}
+
+export type WifiProfileInput = {
+  name: string
+  description?: string | null | undefined
+  wifiRateLimit?: string | null | undefined
+  wifiSessionTimeout?: number | null | undefined
 }
 
 function createWifiPassword() {
@@ -45,32 +57,75 @@ async function getRole(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], 
   return role
 }
 
+async function getWifiProfile(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], wifiProfileId: number) {
+  const profile = await tx.query.wifiProfiles.findFirst({ where: eq(wifiProfiles.id, wifiProfileId) })
+  if (!profile) throw new Error('WIFI_PROFILE_NOT_FOUND')
+  return profile
+}
+
 async function writeRadiusReply(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   username: string,
-  role: typeof roles.$inferSelect,
+  wifiProfile: typeof wifiProfiles.$inferSelect,
 ) {
   const attributes = []
-  if (role.wifiRateLimit) {
-    attributes.push({ username, attribute: 'Mikrotik-Rate-Limit', op: '=', value: role.wifiRateLimit })
+  if (wifiProfile.wifiRateLimit) {
+    attributes.push({ username, attribute: 'Mikrotik-Rate-Limit', op: '=', value: wifiProfile.wifiRateLimit })
   }
-  if (role.wifiSessionTimeout) {
-    attributes.push({ username, attribute: 'Session-Timeout', op: '=', value: String(role.wifiSessionTimeout) })
+  if (wifiProfile.wifiSessionTimeout) {
+    attributes.push({ username, attribute: 'Session-Timeout', op: '=', value: String(wifiProfile.wifiSessionTimeout) })
   }
   if (attributes.length) await tx.insert(radreply).values(attributes)
 }
 
+// ---------------------------------------------------------------------------
+// Perfis de Rede Wi-Fi (CRUD)
+// ---------------------------------------------------------------------------
+export async function listWifiProfiles() {
+  return db.select().from(wifiProfiles).orderBy(asc(wifiProfiles.name))
+}
+
+export async function createWifiProfile(input: WifiProfileInput) {
+  const [profile] = await db.insert(wifiProfiles).values({
+    name: input.name,
+    description: input.description ?? null,
+    wifiRateLimit: input.wifiRateLimit ?? null,
+    wifiSessionTimeout: input.wifiSessionTimeout ?? null,
+  }).returning()
+  return profile
+}
+
+export async function updateWifiProfile(id: number, input: Partial<WifiProfileInput>) {
+  const [profile] = await db.update(wifiProfiles).set({
+    ...(input.name !== undefined && { name: input.name }),
+    ...(input.description !== undefined && { description: input.description }),
+    ...(input.wifiRateLimit !== undefined && { wifiRateLimit: input.wifiRateLimit }),
+    ...(input.wifiSessionTimeout !== undefined && { wifiSessionTimeout: input.wifiSessionTimeout }),
+  }).where(eq(wifiProfiles.id, id)).returning()
+  return profile
+}
+
+export async function deleteWifiProfile(id: number) {
+  await db.delete(wifiProfiles).where(eq(wifiProfiles.id, id))
+}
+
+// ---------------------------------------------------------------------------
+// Membros (CRUD)
+// ---------------------------------------------------------------------------
 export async function createMember(input: CreateMemberInput) {
   const wifiPassword = createWifiPassword()
 
   return db.transaction(async (tx) => {
     const role = await getRole(tx, input.roleId)
+    const wifiProfile = input.wifiProfileId ? await getWifiProfile(tx, input.wifiProfileId) : null
+
     const [user] = await tx.insert(users).values({
       id: randomUUID(),
       name: input.name,
       email: input.email.toLowerCase(),
       cpf: input.cpf ?? null,
       phone: input.phone ?? null,
+      wifiProfileId: wifiProfile?.id ?? null,
       active: true,
     }).returning()
 
@@ -83,9 +138,9 @@ export async function createMember(input: CreateMemberInput) {
       op: ':=',
       value: wifiPassword,
     })
-    await writeRadiusReply(tx, user.email, role)
+    if (wifiProfile) await writeRadiusReply(tx, user.email, wifiProfile)
 
-    return { user, role, wifiPassword }
+    return { user, role, wifiProfile, wifiPassword }
   })
 }
 
@@ -100,13 +155,16 @@ export async function listMembers(input: ListMembersInput) {
     const ids = db.select({ userId: userRoles.userId }).from(userRoles).where(eq(userRoles.roleId, input.roleId))
     filters.push(inArray(users.id, ids))
   }
+  if (input.wifiProfileId) {
+    filters.push(eq(users.wifiProfileId, input.wifiProfileId))
+  }
   const where = filters.length ? and(...filters) : undefined
   const offset = (input.page - 1) * input.limit
 
   const [rows, totalResult] = await Promise.all([
     db.query.users.findMany({
       where,
-      with: { userRoles: { with: { role: true } } },
+      with: { userRoles: { with: { role: true } }, wifiProfile: true },
       orderBy: [desc(users.createdAt), asc(users.name)],
       limit: input.limit,
       offset,
@@ -120,7 +178,7 @@ export async function listMembers(input: ListMembersInput) {
 export async function getMember(id: string) {
   return db.query.users.findFirst({
     where: eq(users.id, id),
-    with: { userRoles: { with: { role: true } } },
+    with: { userRoles: { with: { role: true } }, wifiProfile: true },
   })
 }
 
@@ -130,11 +188,15 @@ export async function updateMember(id: string, input: UpdateMemberInput) {
     if (!current) throw new Error('MEMBER_NOT_FOUND')
 
     const email = input.email?.toLowerCase() ?? current.email
+    const wifiProfileId = input.wifiProfileId !== undefined ? input.wifiProfileId : current.wifiProfileId
+    const wifiProfile = wifiProfileId ? await getWifiProfile(tx, wifiProfileId) : null
+
     const [user] = await tx.update(users).set({
       ...(input.name !== undefined && { name: input.name }),
       ...(input.email !== undefined && { email }),
       ...(input.cpf !== undefined && { cpf: input.cpf }),
       ...(input.phone !== undefined && { phone: input.phone }),
+      wifiProfileId: wifiProfile?.id ?? null,
       updatedAt: new Date(),
     }).where(eq(users.id, id)).returning()
 
@@ -147,8 +209,11 @@ export async function updateMember(id: string, input: UpdateMemberInput) {
       const role = await getRole(tx, input.roleId)
       await tx.delete(userRoles).where(eq(userRoles.userId, id))
       await tx.insert(userRoles).values({ userId: id, roleId: role.id })
+    }
+
+    if (input.wifiProfileId !== undefined || email !== current.email) {
       await tx.delete(radreply).where(eq(radreply.username, email))
-      if (current.active) await writeRadiusReply(tx, email, role)
+      if (current.active && wifiProfile) await writeRadiusReply(tx, email, wifiProfile)
     }
 
     return user
@@ -160,6 +225,7 @@ export async function deactivateMember(id: string) {
     const user = await tx.query.users.findFirst({ where: eq(users.id, id) })
     if (!user) throw new Error('MEMBER_NOT_FOUND')
     await tx.update(users).set({ active: false, updatedAt: new Date() }).where(eq(users.id, id))
+    await tx.delete(sessions).where(eq(sessions.userId, id))
     await tx.delete(radcheck).where(eq(radcheck.username, user.email))
     await tx.delete(radreply).where(eq(radreply.username, user.email))
   })
@@ -170,17 +236,15 @@ export async function reactivateMember(id: string) {
   return db.transaction(async (tx) => {
     const user = await tx.query.users.findFirst({
       where: eq(users.id, id),
-      with: { userRoles: { with: { role: true } } },
+      with: { userRoles: { with: { role: true } }, wifiProfile: true },
     })
     if (!user) throw new Error('MEMBER_NOT_FOUND')
-    const role = user.userRoles[0]?.role
-    if (!role) throw new Error('ROLE_NOT_FOUND')
 
     await tx.update(users).set({ active: true, updatedAt: new Date() }).where(eq(users.id, id))
     await tx.delete(radcheck).where(eq(radcheck.username, user.email))
     await tx.delete(radreply).where(eq(radreply.username, user.email))
     await tx.insert(radcheck).values({ username: user.email, attribute: 'Cleartext-Password', op: ':=', value: wifiPassword })
-    await writeRadiusReply(tx, user.email, role)
+    if (user.wifiProfile) await writeRadiusReply(tx, user.email, user.wifiProfile)
     return { wifiPassword }
   })
 }

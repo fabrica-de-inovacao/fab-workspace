@@ -16,7 +16,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-      <Toaster position="bottom-right" richColors closeButton />
+      <Toaster position="top-right" richColors closeButton />
     </QueryClientProvider>
   )
 }

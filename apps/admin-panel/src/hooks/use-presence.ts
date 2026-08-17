@@ -22,7 +22,7 @@ export type HistoryFilters = { page?: number; limit?: number; username?: string;
 export function useOnlinePresence() {
   return useQuery({
     queryKey: ['presence', 'online'],
-    queryFn: () => api<{ data: PresenceSession[] }>('/api/presence/online'),
+    queryFn: () => api<{ data: PresenceSession[] }>('/presence/online'),
     refetchInterval: 30_000,
   })
 }
@@ -36,6 +36,6 @@ export function usePresenceHistory(filters: HistoryFilters) {
   if (filters.to) params.set('to', new Date(`${filters.to}T23:59:59`).toISOString())
   return useQuery({
     queryKey: ['presence', 'history', filters],
-    queryFn: () => api<{ data: PresenceSession[]; total: number; page: number; limit: number }>(`/api/presence/history?${params}`),
+    queryFn: () => api<{ data: PresenceSession[]; total: number; page: number; limit: number }>(`/presence/history?${params}`),
   })
 }

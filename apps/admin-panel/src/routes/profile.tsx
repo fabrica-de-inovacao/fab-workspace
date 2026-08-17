@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { authClient } from '../lib/auth-client.js'
 import { useLinkedAccounts } from '../hooks/use-linked-accounts.js'
+import { PageBody, PageHeader, PageShell } from '../components/page.js'
 
 export function ProfilePage() {
   const router = useRouter()
@@ -19,7 +20,7 @@ export function ProfilePage() {
       errorCallbackURL: `${window.location.origin}/profile?error=google_link_failed`,
     })
 
-    if (result.error) {
+    if ('error' in result && result.error) {
       setActionError('Não foi possível iniciar o vínculo com o Google.')
     }
   }
@@ -29,7 +30,7 @@ export function ProfilePage() {
     setUnlinking(true)
     const result = await authClient.unlinkAccount({ providerId: 'google' })
 
-    if (result.error) {
+    if ('error' in result && result.error) {
       setActionError('Não foi possível desvincular a conta Google.')
     } else {
       await refresh()
@@ -38,26 +39,11 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="min-h-full p-4 sm:p-6">
-      <div className="mx-auto max-w-3xl rounded-2xl border border-hairline bg-surface p-6 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            {session?.user.image ? (
-              <img
-                src={session.user.image}
-                alt="Foto do perfil"
-                className="h-14 w-14 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-lg text-primary">
-                {session?.user.name?.charAt(0).toUpperCase() ?? '?'}
-              </div>
-            )}
-            <div>
-              <h1 className="text-2xl font-light tracking-tight text-ink">Meu perfil</h1>
-              <p className="mt-1 text-sm text-ink-muted">{session?.user.email}</p>
-            </div>
-          </div>
+    <PageShell width="medium">
+      <PageHeader
+        title="Meu perfil"
+        subtitle={session?.user.email}
+        actions={
           <button
             type="button"
             onClick={() => router.navigate({ to: '/dashboard' })}
@@ -65,7 +51,9 @@ export function ProfilePage() {
           >
             Voltar
           </button>
-        </div>
+        }
+      />
+      <PageBody>
 
         <section className="mt-8 rounded-xl bg-surface-soft p-5">
           <div>
@@ -114,7 +102,7 @@ export function ProfilePage() {
             <p className="mt-3 text-sm text-error">{error ?? actionError}</p>
           )}
         </section>
-      </div>
-    </div>
+      </PageBody>
+    </PageShell>
   )
 }

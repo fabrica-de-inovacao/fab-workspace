@@ -1,0 +1,15 @@
+{
+  "name": "Fábrica de Inovação - Wi-Fi",
+  "short_name": "Wi-Fi Fábrica",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0066A1",
+  "theme_color": "#0066A1",
+  "icons": [
+    {
+      "src": "/branding/fabitz_logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

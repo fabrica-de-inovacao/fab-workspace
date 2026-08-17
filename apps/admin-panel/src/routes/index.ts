@@ -13,6 +13,7 @@ import { MembersPage } from './members.js'
 import { NewMemberPage } from './member-new.js'
 import { MemberDetailPage } from './member-detail.js'
 import { RolesPage } from './roles.js'
+import { WifiProfilesPage } from './wifi-profiles.js'
 import { PresencePage } from './presence.js'
 import { AppShell } from '../components/app-shell.js'
 
@@ -27,7 +28,8 @@ const rootRoute = createRootRoute({
 // Guard helper — checa sessão antes de entrar em rotas protegidas
 // ---------------------------------------------------------------------------
 async function requireAuth() {
-  const { data: session } = await authClient.getSession()
+  const result = await authClient.getSession()
+  const session = result && 'data' in result ? result.data : result
   if (!session) {
     throw redirect({ to: '/login' })
   }
@@ -48,9 +50,10 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   component: LoginPage,
-  beforeLoad: async () => {
-    // Se já tem sessão, redireciona para dashboard
-    const { data: session } = await authClient.getSession()
+    beforeLoad: async () => {
+      // Se já tem sessão, redireciona para dashboard
+    const result = await authClient.getSession()
+    const session = result && 'data' in result ? result.data : result
     if (session) throw redirect({ to: '/dashboard' })
   },
 })
@@ -75,6 +78,7 @@ const membersRoute = createRoute({ getParentRoute: () => authenticatedRoute, pat
 const newMemberRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/members/new', component: NewMemberPage })
 const memberDetailRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/members/$memberId', component: MemberDetailPage })
 const rolesRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/roles', component: RolesPage })
+const wifiProfilesRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/wifi-profiles', component: WifiProfilesPage })
 const presenceRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/presence', component: PresencePage })
 
 // ---------------------------------------------------------------------------
@@ -92,7 +96,7 @@ const indexRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
-  authenticatedRoute.addChildren([dashboardRoute, profileRoute, membersRoute, newMemberRoute, memberDetailRoute, rolesRoute, presenceRoute]),
+  authenticatedRoute.addChildren([dashboardRoute, profileRoute, membersRoute, newMemberRoute, memberDetailRoute, rolesRoute, wifiProfilesRoute, presenceRoute]),
 ])
 
 export const router = createRouter({ routeTree })

@@ -1,7 +1,8 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
-import { requireAuth } from '../middleware/require-auth.js'
+import { requireCoordinator } from '../middleware/require-auth.js'
 import { getUserHistory, listHistory, listOnline } from '../services/presence.service.js'
+import { API_PREFIX } from '../lib/paths.js'
 
 const jsonContent = (schema: z.ZodType) => ({ content: { 'application/json': { schema } } })
 const errorSchema = z.object({ error: z.string() })
@@ -11,10 +12,10 @@ const pagination = z.object({
 })
 
 export const presenceRouter = new OpenAPIHono()
-presenceRouter.use('/api/presence/*', requireAuth)
+presenceRouter.use(`${API_PREFIX}/presence/*`, requireCoordinator)
 
 const onlineRoute = createRoute({
-  method: 'get', path: '/api/presence/online', tags: ['Presence'], summary: 'Listar sessões Wi-Fi online',
+  method: 'get', path: `${API_PREFIX}/presence/online`, tags: ['Presence'], summary: 'Listar sessões Wi-Fi online',
   responses: { 200: { description: 'Sessões online', ...jsonContent(z.object({ data: z.array(z.any()) })) } },
 })
 presenceRouter.openapi(onlineRoute, async (c) => c.json({ data: await listOnline() }))
@@ -25,7 +26,7 @@ const historyQuery = pagination.extend({
   to: z.iso.datetime().optional(),
 })
 const historyRoute = createRoute({
-  method: 'get', path: '/api/presence/history', tags: ['Presence'], summary: 'Consultar histórico Wi-Fi',
+  method: 'get', path: `${API_PREFIX}/presence/history`, tags: ['Presence'], summary: 'Consultar histórico Wi-Fi',
   request: { query: historyQuery },
   responses: {
     200: { description: 'Histórico paginado', ...jsonContent(z.any()) },
@@ -45,7 +46,7 @@ presenceRouter.openapi(historyRoute, async (c) => {
 })
 
 const userHistoryRoute = createRoute({
-  method: 'get', path: '/api/presence/history/{username}', tags: ['Presence'], summary: 'Histórico Wi-Fi de um membro',
+  method: 'get', path: `${API_PREFIX}/presence/history/{username}`, tags: ['Presence'], summary: 'Histórico Wi-Fi de um membro',
   request: { params: z.object({ username: z.string().min(1) }), query: pagination },
   responses: {
     200: { description: 'Histórico do membro', ...jsonContent(z.any()) },

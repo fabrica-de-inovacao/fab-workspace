@@ -17,4 +17,8 @@ const pool = new Pool({
 
 export const db = drizzle(pool, { schema, logger: process.env['NODE_ENV'] === 'development' })
 
+export async function closeDatabase() {
+  await pool.end()
+}
+
 export type Database = typeof db

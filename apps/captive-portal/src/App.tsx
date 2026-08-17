@@ -3,12 +3,13 @@ import { isValidLoginUrl, parseMikroTikParams } from './mikrotik.js'
 
 export function App() {
   const params = parseMikroTikParams(window.location.search)
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [localError, setLocalError] = useState('')
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
-    if (!isValidLoginUrl(params.linkLogin)) {
+    if (!isValidLoginUrl(params.linkLogin, params.allowedHosts)) {
       event.preventDefault()
       setLocalError('Portal de acesso indisponível. Reconecte à rede e tente novamente.')
       return
@@ -32,14 +33,14 @@ export function App() {
           </header>
 
           <form action={params.linkLogin || undefined} method="post" onSubmit={submit} className="mt-8 space-y-4">
-            <input type="hidden" name="username" value={password} />
-            <input type="hidden" name="dst" value={params.linkOrig} />
-            <input type="hidden" name="popup" value="true" />
-            <label className="block"><span className="mb-1.5 block text-xs font-normal text-white/80">Senha de acesso</span><input type="password" name="password" value={password} onChange={(event) => { setPassword(event.target.value); setLocalError('') }} autoComplete="current-password" minLength={6} required placeholder="Digite sua senha" className="w-full rounded-lg border border-white/30 bg-white/15 px-3 py-3 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/60 focus:bg-white/20 focus:ring-2 focus:ring-white/20" /></label>
+             <input type="hidden" name="dst" value={params.linkOrig} />
+             <input type="hidden" name="popup" value="true" />
+             <label className="block"><span className="mb-1.5 block text-xs font-normal text-white/80">Email de acesso</span><input type="email" name="username" value={username} onChange={(event) => { setUsername(event.target.value); setLocalError('') }} autoComplete="username" required placeholder="seu@email.com" className="w-full rounded-lg border border-white/30 bg-white/15 px-3 py-3 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/60 focus:bg-white/20 focus:ring-2 focus:ring-white/20" /></label>
+             <label className="block"><span className="mb-1.5 block text-xs font-normal text-white/80">Senha de acesso</span><input type="password" name="password" value={password} onChange={(event) => { setPassword(event.target.value); setLocalError('') }} autoComplete="current-password" minLength={6} required placeholder="Digite sua senha" className="w-full rounded-lg border border-white/30 bg-white/15 px-3 py-3 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/60 focus:bg-white/20 focus:ring-2 focus:ring-white/20" /></label>
 
             {(params.error || localError) && <p role="alert" className="rounded-lg bg-red-500/20 px-3 py-2.5 text-xs leading-relaxed text-red-50">{localError || friendlyError(params.error)}</p>}
 
-            <button type="submit" disabled={submitting || !password} className="w-full rounded-full bg-white px-4 py-3 text-sm font-normal text-primary transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60">{submitting ? 'Conectando...' : 'Conectar'}</button>
+            <button type="submit" disabled={submitting || !username || !password} className="w-full rounded-full bg-white px-4 py-3 text-sm font-normal text-primary transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60">{submitting ? 'Conectando...' : 'Conectar'}</button>
           </form>
 
           {(params.mac || params.ip) && <p className="mt-6 text-center font-mono text-[10px] text-white/40">{params.mac || 'dispositivo'} · {params.ip || 'IP automático'}</p>}

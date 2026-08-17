@@ -1,8 +1,9 @@
 import { hashPassword } from 'better-auth/crypto'
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { db, accounts, users } from '@fabrica/db'
+import { db, accounts, roles, userRoles, users } from '@fabrica/db'
 import { sql } from 'drizzle-orm'
 import { z } from 'zod'
+import { API_PREFIX } from '../lib/paths.js'
 
 const bodySchema = z.object({
   name: z.string().trim().min(2),
@@ -12,7 +13,7 @@ const bodySchema = z.object({
 
 export const bootstrapRouter = new OpenAPIHono()
 
-bootstrapRouter.post('/api/bootstrap/admin', async (c) => {
+bootstrapRouter.post(`${API_PREFIX}/bootstrap/admin`, async (c) => {
   const body = bodySchema.safeParse(await c.req.json().catch(() => null))
   if (!body.success) {
     return c.json({ error: 'Dados inválidos', details: body.error.flatten().fieldErrors }, 400)
@@ -45,6 +46,9 @@ bootstrapRouter.post('/api/bootstrap/admin', async (c) => {
         userId,
         password: await hashPassword(body.data.password),
       })
+      const [role] = await tx.insert(roles).values({ name: 'admin', description: 'Administrador do painel' }).onConflictDoUpdate({ target: roles.name, set: { description: 'Administrador do painel' } }).returning()
+      if (!role) throw new Error('ROLE_NOT_FOUND')
+      await tx.insert(userRoles).values({ userId, roleId: role.id })
     })
   } catch (error) {
     if (error instanceof Error && error.message === 'BOOTSTRAP_CLOSED') {

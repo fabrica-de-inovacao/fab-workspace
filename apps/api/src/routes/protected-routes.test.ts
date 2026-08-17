@@ -15,19 +15,23 @@ import { presenceRouter } from './presence.js'
 
 const app = new OpenAPIHono().route('/', membersRouter).route('/', presenceRouter)
 const protectedRequests = [
-  ['GET', '/api/roles'],
-  ['POST', '/api/roles'],
-  ['GET', '/api/members'],
-  ['POST', '/api/members'],
-  ['GET', '/api/members/00000000-0000-0000-0000-000000000000'],
-  ['PATCH', '/api/members/00000000-0000-0000-0000-000000000000'],
-  ['POST', '/api/members/00000000-0000-0000-0000-000000000000/deactivate'],
-  ['POST', '/api/members/00000000-0000-0000-0000-000000000000/reactivate'],
-  ['GET', '/api/members/00000000-0000-0000-0000-000000000000/wifi-password'],
-  ['POST', '/api/members/00000000-0000-0000-0000-000000000000/reset-wifi-password'],
-  ['GET', '/api/presence/online'],
-  ['GET', '/api/presence/history'],
-  ['GET', '/api/presence/history/member@example.com'],
+  ['GET', '/api/v1/roles'],
+  ['POST', '/api/v1/roles'],
+  ['GET', '/api/v1/wifi-profiles'],
+  ['POST', '/api/v1/wifi-profiles'],
+  ['PATCH', '/api/v1/wifi-profiles/1'],
+  ['DELETE', '/api/v1/wifi-profiles/1'],
+  ['GET', '/api/v1/members'],
+  ['POST', '/api/v1/members'],
+  ['GET', '/api/v1/members/00000000-0000-0000-0000-000000000000'],
+  ['PATCH', '/api/v1/members/00000000-0000-0000-0000-000000000000'],
+  ['POST', '/api/v1/members/00000000-0000-0000-0000-000000000000/deactivate'],
+  ['POST', '/api/v1/members/00000000-0000-0000-0000-000000000000/reactivate'],
+  ['GET', '/api/v1/members/00000000-0000-0000-0000-000000000000/wifi-password'],
+  ['POST', '/api/v1/members/00000000-0000-0000-0000-000000000000/reset-wifi-password'],
+  ['GET', '/api/v1/presence/online'],
+  ['GET', '/api/v1/presence/history'],
+  ['GET', '/api/v1/presence/history/member@example.com'],
 ] as const
 
 describe('protected API routes', () => {

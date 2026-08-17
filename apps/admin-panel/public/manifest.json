@@ -1,0 +1,15 @@
+{
+  "name": "FabITZ Workspace",
+  "short_name": "FabITZ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCFCFD",
+  "theme_color": "#0066A1",
+  "icons": [
+    {
+      "src": "/branding/fabitz_logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

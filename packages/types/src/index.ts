@@ -2,6 +2,7 @@ import type { InferSelectModel, InferInsertModel } from 'drizzle-orm'
 import type {
   users,
   roles,
+  wifiProfiles,
   userRoles,
   radcheck,
   radreply,
@@ -17,6 +18,9 @@ export type NewUser = InferInsertModel<typeof users>
 
 export type Role = InferSelectModel<typeof roles>
 export type NewRole = InferInsertModel<typeof roles>
+
+export type WifiProfile = InferSelectModel<typeof wifiProfiles>
+export type NewWifiProfile = InferInsertModel<typeof wifiProfiles>
 
 export type UserRole = InferSelectModel<typeof userRoles>
 export type NewUserRole = InferInsertModel<typeof userRoles>
@@ -34,6 +38,7 @@ export type Radacct = InferSelectModel<typeof radacct>
 // ---------------------------------------------------------------------------
 export type MemberWithRoles = User & {
   roles: Role[]
+  wifiProfile: WifiProfile | null
 }
 
 export type MemberStatus = 'active' | 'inactive'
