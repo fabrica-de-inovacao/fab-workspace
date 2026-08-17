@@ -82,7 +82,6 @@ export async function verifyInvitation(token: string) {
 
 export async function acceptInvitation(input: AcceptInvitationInput) {
   const invitation = await verifyInvitation(input.token)
-  const wifiPassword = createWifiPassword()
   const userId = randomUUID()
   const accountId = randomUUID()
   const passwordHash = await hashPassword(input.password)
@@ -117,12 +116,12 @@ export async function acceptInvitation(input: AcceptInvitationInput) {
       roleId: invitation.roleId,
     })
 
-    // 4. Provisionar Wi-Fi RADIUS (radcheck + radreply)
+    // 4. Provisionar Wi-Fi RADIUS com a MESMA senha do Painel (Senha Única)
     await tx.insert(radcheck).values({
       username: user.email,
       attribute: 'Cleartext-Password',
       op: ':=',
-      value: wifiPassword,
+      value: input.password,
     })
 
     if (invitation.wifiProfileId) {
@@ -142,6 +141,6 @@ export async function acceptInvitation(input: AcceptInvitationInput) {
     // 5. Marcar convite como aceito
     await tx.update(invitations).set({ acceptedAt: new Date() }).where(eq(invitations.id, invitation.id))
 
-    return { user, wifiPassword }
+    return { user }
   })
 }

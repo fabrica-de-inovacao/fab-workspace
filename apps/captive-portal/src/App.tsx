@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Eye, EyeOff, Loader2, Wifi, Ticket } from 'lucide-react'
+import { Camera, Eye, EyeOff, Keyboard, Loader2, QrCode, Ticket, Wifi } from 'lucide-react'
 import { isValidLoginUrl, parseMikroTikParams } from './mikrotik.js'
 import { BackgroundAnimation } from './components/background-animation.js'
+import { QRScanner } from './components/qr-scanner.js'
 
 type Mode = 'credentials' | 'voucher'
 
@@ -14,6 +15,7 @@ export function App() {
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [localError, setLocalError] = useState('')
+  const [scanning, setScanning] = useState(true)
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     if (!isValidLoginUrl(params.linkLogin, params.allowedHosts)) {
@@ -22,6 +24,13 @@ export function App() {
       return
     }
     setSubmitting(true)
+  }
+
+  function handleQRScan(code: string) {
+    const cleanCode = code.trim().toUpperCase()
+    setVoucher(cleanCode)
+    setScanning(false)
+    setLocalError('')
   }
 
   const canSubmit = mode === 'credentials'
@@ -56,7 +65,7 @@ export function App() {
             <div className="mb-6 flex rounded-full border border-hairline-input bg-surface-soft p-1">
               <button
                 type="button"
-                onClick={() => { setMode('credentials'); setLocalError('') }}
+                onClick={() => { setMode('credentials'); setLocalError(''); setScanning(false) }}
                 className={`flex-1 rounded-full py-2 text-sm transition-all duration-200 ${
                   mode === 'credentials'
                     ? 'bg-primary text-white shadow-sm font-medium'
@@ -67,14 +76,14 @@ export function App() {
               </button>
               <button
                 type="button"
-                onClick={() => { setMode('voucher'); setLocalError('') }}
+                onClick={() => { setMode('voucher'); setLocalError(''); setScanning(true) }}
                 className={`flex-1 rounded-full py-2 text-sm transition-all duration-200 ${
                   mode === 'voucher'
                     ? 'bg-primary text-white shadow-sm font-medium'
                     : 'text-ink-muted hover:text-ink'
                 }`}
               >
-                Voucher de visitante
+                Voucher visitante
               </button>
             </div>
 
@@ -155,31 +164,52 @@ export function App() {
               <form action={params.linkLogin || undefined} method="post" onSubmit={submit} className="space-y-5">
                 <input type="hidden" name="dst" value={params.linkOrig} />
                 <input type="hidden" name="popup" value="true" />
-
-                <div>
-                  <label htmlFor="cp-voucher" className="mb-1.5 block text-xs font-medium tracking-wide text-ink-muted">
-                    Código do voucher
-                  </label>
-                  <div className="relative">
-                    <Ticket size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted/40" />
-                    <input
-                      id="cp-voucher"
-                      type="text"
-                      name="username"
-                      value={voucher}
-                      onChange={(e) => { setVoucher(e.target.value); setLocalError('') }}
-                      autoComplete="off"
-                      required
-                      placeholder="Ex: VISIT-ABCD-1234"
-                      className="h-11 w-full rounded-xl border border-hairline-input bg-white/70 pl-10 pr-3.5 text-sm font-normal text-ink uppercase tracking-wider transition-all duration-200 placeholder:text-ink-muted/40 placeholder:normal-case placeholder:tracking-normal focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
-                    />
-                  </div>
-                  <p className="mt-2 text-[11px] text-ink-muted/50">
-                    Solicite o voucher de acesso na recepção da Fábrica.
-                  </p>
-                </div>
-
                 <input type="hidden" name="password" value={voucher} />
+
+                {/* Leitor de QR Code Ativo por Padrão */}
+                {scanning ? (
+                  <div className="space-y-3">
+                    <QRScanner onScan={handleQRScan} onClose={() => setScanning(false)} />
+                    <button
+                      type="button"
+                      onClick={() => setScanning(false)}
+                      className="flex w-full items-center justify-center gap-1.5 text-xs text-ink-muted hover:text-primary transition-colors py-1"
+                    >
+                      <Keyboard size={14} />
+                      <span>Ou digite o código manualmente</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label htmlFor="cp-voucher" className="text-xs font-medium tracking-wide text-ink-muted">
+                        Código do voucher
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setScanning(true)}
+                        className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:text-primary-hover transition-colors"
+                      >
+                        <Camera size={14} />
+                        <span>Abrir Câmera</span>
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Ticket size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted/40" />
+                      <input
+                        id="cp-voucher"
+                        type="text"
+                        name="username"
+                        value={voucher}
+                        onChange={(e) => { setVoucher(e.target.value); setLocalError('') }}
+                        autoComplete="off"
+                        required
+                        placeholder="Ex: FAB-ABCD-1234"
+                        className="h-11 w-full rounded-xl border border-hairline-input bg-white/70 pl-10 pr-3.5 text-sm font-normal text-ink uppercase tracking-wider transition-all duration-200 placeholder:text-ink-muted/40 placeholder:normal-case placeholder:tracking-normal focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"
