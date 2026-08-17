@@ -1,0 +1,32 @@
+{
+  "name": "@fabrica/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run src",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@fabrica/db": "*",
+    "@fabrica/types": "*",
+    "@hono/node-server": "^1.14.4",
+    "@hono/swagger-ui": "^0.6.1",
+    "@hono/zod-openapi": "^1.6.0",
+    "better-auth": "^1.6.29",
+    "dotenv": "^17.4.2",
+    "hono": "^4.13.2",
+    "hono-rate-limiter": "^0.5.3",
+    "resend": "^6.20.0",
+    "unstorage": "^1.17.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.12",
+    "vitest": "^4.0.0"
+  }
+}
