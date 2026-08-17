@@ -8,10 +8,14 @@ ENV NODE_ENV=development
 # Copy root manifests
 COPY package.json yarn.lock turbo.json tsconfig.base.json ./
 
-# Copy package manifests
+# Copy all workspace package manifests
+COPY packages/types/package.json packages/types/
+COPY packages/db/package.json packages/db/
 COPY apps/captive-portal/package.json apps/captive-portal/
 
-# Copy sources
+# Copy all sources needed for build
+COPY packages/types packages/types
+COPY packages/db packages/db
 COPY apps/captive-portal apps/captive-portal
 
 # Install dependencies (including devDependencies for build)

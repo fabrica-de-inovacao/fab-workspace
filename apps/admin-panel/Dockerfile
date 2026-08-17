@@ -8,12 +8,14 @@ ENV NODE_ENV=development
 # Copy root manifests
 COPY package.json yarn.lock turbo.json tsconfig.base.json ./
 
-# Copy package manifests
+# Copy all workspace package manifests
 COPY packages/types/package.json packages/types/
+COPY packages/db/package.json packages/db/
 COPY apps/admin-panel/package.json apps/admin-panel/
 
-# Copy sources
+# Copy all sources needed for build
 COPY packages/types packages/types
+COPY packages/db packages/db
 COPY apps/admin-panel apps/admin-panel
 
 # Install dependencies (including devDependencies for build)
