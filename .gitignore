@@ -47,6 +47,7 @@ jspm_packages/
 *.env*
 /docs
 DESIGN.md
+AUDIT_REPORT.md
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
