@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for @fabrica/api
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN yarn install --frozen-lockfile
 RUN yarn build --filter=@fabrica/api...
 
 # Production Runner stage
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 WORKDIR /app
 
