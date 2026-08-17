@@ -3,6 +3,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+ENV NODE_ENV=development
+
 # Copy root manifests
 COPY package.json yarn.lock turbo.json tsconfig.base.json ./
 
@@ -14,7 +16,7 @@ COPY apps/admin-panel/package.json apps/admin-panel/
 COPY packages/types packages/types
 COPY apps/admin-panel apps/admin-panel
 
-# Install dependencies
+# Install dependencies (including devDependencies for build)
 RUN yarn install --frozen-lockfile
 
 # Build Admin Panel

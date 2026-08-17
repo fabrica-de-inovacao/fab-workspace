@@ -3,8 +3,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+ENV NODE_ENV=development
+
 # Install build dependencies
-RUN apk add --no-co-cache python3 make g++
+RUN apk add --no-cache python3 make g++
 
 # Copy root manifests
 COPY package.json yarn.lock turbo.json tsconfig.base.json ./
@@ -19,7 +21,7 @@ COPY packages/types packages/types
 COPY packages/db packages/db
 COPY apps/api apps/api
 
-# Install all dependencies
+# Install all dependencies (including devDependencies for build)
 RUN yarn install --frozen-lockfile
 
 # Build packages and API app
