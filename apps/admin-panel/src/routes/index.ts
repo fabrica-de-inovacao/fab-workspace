@@ -14,6 +14,7 @@ import { NewMemberPage } from './member-new.js'
 import { MemberDetailPage } from './member-detail.js'
 import { RolesPage } from './roles.js'
 import { WifiProfilesPage } from './wifi-profiles.js'
+import { VouchersPage } from './vouchers.js'
 import { PresencePage } from './presence.js'
 import { AppShell } from '../components/app-shell.js'
 
@@ -79,6 +80,7 @@ const newMemberRoute = createRoute({ getParentRoute: () => authenticatedRoute, p
 const memberDetailRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/members/$memberId', component: MemberDetailPage })
 const rolesRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/roles', component: RolesPage })
 const wifiProfilesRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/wifi-profiles', component: WifiProfilesPage })
+const vouchersRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/vouchers', component: VouchersPage })
 const presenceRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/presence', component: PresencePage })
 
 // ---------------------------------------------------------------------------
@@ -96,7 +98,7 @@ const indexRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
-  authenticatedRoute.addChildren([dashboardRoute, profileRoute, membersRoute, newMemberRoute, memberDetailRoute, rolesRoute, wifiProfilesRoute, presenceRoute]),
+  authenticatedRoute.addChildren([dashboardRoute, profileRoute, membersRoute, newMemberRoute, memberDetailRoute, rolesRoute, wifiProfilesRoute, vouchersRoute, presenceRoute]),
 ])
 
 export const router = createRouter({ routeTree })

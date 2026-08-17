@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NODE_ENV: production
+      PORT: 3001
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      APP_URL: ${APP_URL}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+    networks:
+      - coolify # Conecta ao banco de dados e ao Proxy
+
+  admin-panel:
+    build:
+      context: .
+      dockerfile: apps/admin-panel/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    restart: unless-stopped
+    networks:
+      - coolify
+
+  captive-portal:
+    build:
+      context: .
+      dockerfile: apps/captive-portal/Dockerfile
+      # Adicione os args do captive portal aqui também se tiver VITE_FALLBACK, etc.
+    restart: unless-stopped
+    networks:
+      - coolify
+
+networks:
+  coolify:
+    external: true # Diz ao Compose para usar a rede principal do servidor gerida pelo Coolify

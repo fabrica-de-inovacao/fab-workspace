@@ -12,8 +12,9 @@ import { OpenAPIHono } from '@hono/zod-openapi'
 import { describe, expect, it } from 'vitest'
 import { membersRouter } from './members.js'
 import { presenceRouter } from './presence.js'
+import { vouchersRouter } from './vouchers.js'
 
-const app = new OpenAPIHono().route('/', membersRouter).route('/', presenceRouter)
+const app = new OpenAPIHono().route('/', membersRouter).route('/', presenceRouter).route('/', vouchersRouter)
 const protectedRequests = [
   ['GET', '/api/v1/roles'],
   ['POST', '/api/v1/roles'],
@@ -32,6 +33,9 @@ const protectedRequests = [
   ['GET', '/api/v1/presence/online'],
   ['GET', '/api/v1/presence/history'],
   ['GET', '/api/v1/presence/history/member@example.com'],
+  ['GET', '/api/v1/vouchers'],
+  ['POST', '/api/v1/vouchers/batch'],
+  ['DELETE', '/api/v1/vouchers/00000000-0000-0000-0000-000000000000'],
 ] as const
 
 describe('protected API routes', () => {

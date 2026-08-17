@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, Outlet, useLocation, useRouter, useRouterState } from '@tanstack/react-router'
-import { ChevronDown, LayoutDashboard, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Settings, Sliders, Sun, Users, Wifi, X } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Settings, Sliders, Sun, Ticket, Users, Wifi, X } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { authClient } from '../lib/auth-client.js'
 import { SettingsDialog } from './settings-dialog.js'
@@ -22,6 +22,7 @@ const navGroups = [
     title: 'Rede',
     items: [
       { to: '/wifi-profiles', label: 'Perfis Wi-Fi', icon: Sliders },
+      { to: '/vouchers', label: 'Vouchers', icon: Ticket },
       { to: '/presence', label: 'Presença Wi-Fi', icon: Wifi },
     ],
   },

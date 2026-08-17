@@ -84,6 +84,19 @@ export const invitations = pgTable('invitations', {
 })
 
 // ---------------------------------------------------------------------------
+// vouchers — Vouchers de acesso temporário para visitantes
+// ---------------------------------------------------------------------------
+export const vouchers = pgTable('vouchers', {
+  id: text('id').primaryKey(),
+  code: varchar('code', { length: 32 }).notNull().unique(),
+  wifiProfileId: integer('wifi_profile_id').references(() => wifiProfiles.id, { onDelete: 'set null' }),
+  expiresAt: timestamp('expires_at').notNull(),
+  usedAt: timestamp('used_at'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// ---------------------------------------------------------------------------
 // Relations
 // ---------------------------------------------------------------------------
 export const wifiProfilesRelations = relations(wifiProfiles, ({ many }) => ({
@@ -102,4 +115,9 @@ export const rolesRelations = relations(roles, ({ many }) => ({
 export const userRolesRelations = relations(userRoles, ({ one }) => ({
   user: one(users, { fields: [userRoles.userId], references: [users.id] }),
   role: one(roles, { fields: [userRoles.roleId], references: [roles.id] }),
+}))
+
+export const vouchersRelations = relations(vouchers, ({ one }) => ({
+  createdBy: one(users, { fields: [vouchers.createdBy], references: [users.id] }),
+  wifiProfile: one(wifiProfiles, { fields: [vouchers.wifiProfileId], references: [wifiProfiles.id] }),
 }))

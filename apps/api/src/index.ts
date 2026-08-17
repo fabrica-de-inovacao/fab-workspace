@@ -11,6 +11,7 @@ import { bootstrapRouter } from './routes/bootstrap.js'
 import { invitationsRouter } from './routes/invitations.js'
 import { membersRouter } from './routes/members.js'
 import { presenceRouter } from './routes/presence.js'
+import { vouchersRouter } from './routes/vouchers.js'
 import { closeDatabase, db, users } from '@fabrica/db'
 import { eq, sql } from 'drizzle-orm'
 import { securityHeaders } from './middleware/security.js'
@@ -81,6 +82,7 @@ app.route('/', bootstrapRouter)
 app.route('/', invitationsRouter)
 app.route('/', membersRouter)
 app.route('/', presenceRouter)
+app.route('/', vouchersRouter)
 
 // ---------------------------------------------------------------------------
 // Health check

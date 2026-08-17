@@ -1,2 +1,6 @@
 User-agent: *
+Allow: /
 Disallow: /api/
+Disallow: /login
+
+Sitemap: https://workspace.fabitz.com.br/sitemap.xml
