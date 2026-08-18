@@ -4,24 +4,39 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>FabITZ Workspace — Fábrica de Inovação</title>
-    <meta name="description" content="Painel de controle e gestão da rede da Fábrica de Inovação. Gerencie membros, acessos Wi-Fi e perfis de rede em um só lugar." />
-    <meta name="keywords" content="fabitz, workspace, fábrica de inovação, wi-fi, gestão de membros, painel de controle, rede, mikrotik, freeradius" />
+    <title>FabITZ Workspace — Painel Administrativo</title>
+    <meta name="description" content="Painel de controle e gestão da rede da Fábrica de Inovação. Gerencie membros, acessos Wi-Fi e perfis de rede." />
     <meta name="author" content="Fábrica de Inovação" />
-    <meta name="robots" content="index, follow" />
 
-    <!-- Open Graph -->
+    <!--
+      INDEXAÇÃO: Este painel é de uso interno.
+      Apenas /politicas e /termos são públicas (ver sitemap.xml).
+      O conteúdo protegido (/dashboard, /members etc.) nunca deve ser indexado.
+    -->
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- Open Graph (OG) — funciona em WhatsApp, Telegram, LinkedIn, etc. -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="FabITZ Workspace — Fábrica de Inovação" />
-    <meta property="og:description" content="Painel de controle e gestão da rede da Fábrica de Inovação." />
     <meta property="og:site_name" content="FabITZ Workspace" />
     <meta property="og:locale" content="pt_BR" />
-    <meta property="og:image" content="/branding/fabitz_logo.svg" />
+    <meta property="og:title" content="FabITZ Workspace — Painel Administrativo" />
+    <meta property="og:description" content="Sistema de gestão da rede Wi-Fi e dos membros da Fábrica de Inovação." />
+    <meta property="og:url" content="https://workspace.fabitz.com.br" />
+    <meta property="og:image" content="https://workspace.fabitz.com.br/branding/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="FabITZ Workspace — Fábrica de Inovação" />
 
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="FabITZ Workspace — Fábrica de Inovação" />
-    <meta name="twitter:description" content="Painel de controle e gestão da rede da Fábrica de Inovação." />
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="FabITZ Workspace — Painel Administrativo" />
+    <meta name="twitter:description" content="Sistema de gestão da rede Wi-Fi e dos membros da Fábrica de Inovação." />
+    <meta name="twitter:image" content="https://workspace.fabitz.com.br/branding/og-image.png" />
+    <meta name="twitter:image:alt" content="FabITZ Workspace — Fábrica de Inovação" />
+
+    <!-- Canonical (apenas para as páginas legais públicas) -->
+    <link rel="canonical" href="https://workspace.fabitz.com.br" />
 
     <!-- Theme & PWA -->
     <meta name="theme-color" content="#0066A1" />
@@ -34,15 +49,12 @@
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-
-    <!-- Canonical -->
-    <link rel="canonical" href="https://workspace.fabitz.com.br" />
   </head>
   <body>
     <div id="root"></div>

@@ -1,6 +1,10 @@
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /login
+# robots.txt — FabITZ Workspace (Painel Administrativo)
+# Sistema de uso interno. Apenas as páginas legais públicas são permitidas.
 
+User-agent: *
+Disallow: /
+Allow: /politicas
+Allow: /termos
+
+# Apenas as páginas legais públicas possuem sitemap
 Sitemap: https://workspace.fabitz.com.br/sitemap.xml

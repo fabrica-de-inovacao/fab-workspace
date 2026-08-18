@@ -1,2 +1,5 @@
+# robots.txt — FabITZ Wi-Fi (Captive Portal)
+# Portal de acesso interno. Nenhuma página deve ser indexada.
+
 User-agent: *
 Disallow: /

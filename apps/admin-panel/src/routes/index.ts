@@ -16,6 +16,9 @@ import { RolesPage } from './roles.js'
 import { WifiProfilesPage } from './wifi-profiles.js'
 import { VouchersPage } from './vouchers.js'
 import { PresencePage } from './presence.js'
+import { PoliticasPage } from './politicas.js'
+import { TermosPage } from './termos.js'
+import { NotFoundPage } from './not-found.js'
 import { AppShell } from '../components/app-shell.js'
 
 // ---------------------------------------------------------------------------
@@ -23,6 +26,7 @@ import { AppShell } from '../components/app-shell.js'
 // ---------------------------------------------------------------------------
 const rootRoute = createRootRoute({
   component: Outlet,
+  notFoundComponent: NotFoundPage,
 })
 
 // ---------------------------------------------------------------------------
@@ -57,6 +61,21 @@ const loginRoute = createRoute({
     const session = result && 'data' in result ? result.data : result
     if (session) throw redirect({ to: '/dashboard' })
   },
+})
+
+// ---------------------------------------------------------------------------
+// /politicas e /termos — públicas
+// ---------------------------------------------------------------------------
+const politicasRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/politicas',
+  component: PoliticasPage,
+})
+
+const termosRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/termos',
+  component: TermosPage,
 })
 
 // ---------------------------------------------------------------------------
@@ -98,10 +117,15 @@ const indexRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
+  politicasRoute,
+  termosRoute,
   authenticatedRoute.addChildren([dashboardRoute, profileRoute, membersRoute, newMemberRoute, memberDetailRoute, rolesRoute, wifiProfilesRoute, vouchersRoute, presenceRoute]),
 ])
 
-export const router = createRouter({ routeTree })
+export const router = createRouter({
+  routeTree,
+  defaultNotFoundComponent: NotFoundPage,
+})
 
 declare module '@tanstack/react-router' {
   interface Register {

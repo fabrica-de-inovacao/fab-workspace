@@ -1,5 +1,5 @@
 import { useState, useEffect, useId } from 'react'
-import { useRouter } from '@tanstack/react-router'
+import { useRouter, Link } from '@tanstack/react-router'
 import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2, UserCheck } from 'lucide-react'
 import { authClient } from '../lib/auth-client.js'
 import { BackgroundAnimation } from '../components/background-animation.js'
@@ -54,6 +54,7 @@ export function LoginPage() {
   const [inviteToken, setInviteToken] = useState<string | null>(null)
   const [invitation, setInvitation] = useState<InvitationData | null>(null)
   const [verifyingInvite, setVerifyingInvite] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   // Checa URL por erro do OAuth ou inviteToken
   useEffect(() => {
@@ -129,6 +130,10 @@ export function LoginPage() {
     if (!invitation || !inviteToken) return
     setError(null)
 
+    if (!acceptedTerms) {
+      setError('Você deve aceitar os Termos de Uso e a Política de Privacidade para continuar.')
+      return
+    }
     if (password.length < 8) {
       setError('A senha deve ter no mínimo 8 caracteres.')
       return
@@ -278,9 +283,31 @@ export function LoginPage() {
               />
             </div>
 
+            {/* Checkbox de Aceite de Termos (Obrigatório) */}
+            <div className="flex items-start gap-2.5 rounded-xl border border-hairline bg-surface-soft p-3.5 mt-2">
+              <input
+                type="checkbox"
+                id="terms-checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-hairline-input text-primary focus:ring-primary"
+              />
+              <label htmlFor="terms-checkbox" className="text-xs text-ink-muted leading-relaxed">
+                Li e concordo com os{' '}
+                <Link to="/termos" target="_blank" className="text-primary hover:underline font-medium">
+                  Termos de Uso
+                </Link>{' '}
+                e a{' '}
+                <Link to="/politicas" target="_blank" className="text-primary hover:underline font-medium">
+                  Política de Privacidade
+                </Link>
+                .
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !acceptedTerms}
               className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-primary-hover hover:shadow-md disabled:opacity-60 mt-2"
             >
               {loading ? (
@@ -384,6 +411,19 @@ export function LoginPage() {
             </button>
           </>
         ) : null}
+
+        {/* Links de Políticas e Termos (Sempre visíveis) */}
+        <footer className="mt-8 pt-4 border-t border-hairline text-center text-[11px] text-ink-muted/60">
+          <p className="space-x-2">
+            <Link to="/termos" className="hover:text-ink transition-colors">
+              Termos de Uso
+            </Link>
+            <span>·</span>
+            <Link to="/politicas" className="hover:text-ink transition-colors">
+              Política de Privacidade
+            </Link>
+          </p>
+        </footer>
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Camera, Eye, EyeOff, Keyboard, Loader2, QrCode, Ticket, Wifi } from 'lucide-react'
+import { Camera, Eye, EyeOff, Keyboard, Loader2, Ticket, Wifi } from 'lucide-react'
 import { isValidLoginUrl, parseMikroTikParams } from './mikrotik.js'
 import { BackgroundAnimation } from './components/background-animation.js'
 import { QRScanner } from './components/qr-scanner.js'
@@ -230,6 +230,21 @@ export function App() {
                 {params.mac || 'dispositivo'} · {params.ip || 'IP automático'}
               </p>
             )}
+
+            {/* Aviso de Políticas e Termos (Obrigatório no Captive Portal) */}
+            <footer className="mt-8 pt-4 border-t border-hairline text-center text-[11px] text-ink-muted/60 leading-relaxed">
+              <p>
+                Ao conectar nesta rede, você atesta que concorda com os{' '}
+                <a href="/termos" target="_blank" className="text-primary hover:underline font-medium">
+                  Termos de Uso
+                </a>{' '}
+                e a{' '}
+                <a href="/politicas" target="_blank" className="text-primary hover:underline font-medium">
+                  Política de Privacidade
+                </a>
+                .
+              </p>
+            </footer>
           </>
         )}
       </div>
