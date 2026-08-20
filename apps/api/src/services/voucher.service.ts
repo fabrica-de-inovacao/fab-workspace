@@ -3,11 +3,10 @@ import {
   db,
   radcheck,
   radreply,
-  users,
   vouchers,
   wifiProfiles,
 } from '@fabrica/db'
-import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 
 export type GenerateVoucherBatchInput = {
   count: number
@@ -16,10 +15,14 @@ export type GenerateVoucherBatchInput = {
   createdById?: string | null | undefined
 }
 
+export function cleanVoucherCode(code: string): string {
+  return code.replace(/[^A-Z0-9]/gi, '').toUpperCase()
+}
+
 function generateVoucherCode() {
   const segment1 = randomBytes(2).toString('hex').toUpperCase()
   const segment2 = randomBytes(2).toString('hex').toUpperCase()
-  return `FAB-${segment1}-${segment2}`
+  return cleanVoucherCode(`FAB${segment1}${segment2}`)
 }
 
 export async function generateVoucherBatch(input: GenerateVoucherBatchInput) {
@@ -49,7 +52,7 @@ export async function generateVoucherBatch(input: GenerateVoucherBatchInput) {
         createdBy: input.createdById ?? null,
       })
 
-      // radcheck: username = code, value = code
+      // radcheck: username = code (limpo/sem traços), value = code
       radcheckValues.push({
         username: code,
         attribute: 'Cleartext-Password',
@@ -93,8 +96,10 @@ export async function revokeVoucher(id: string) {
     const voucher = await tx.query.vouchers.findFirst({ where: eq(vouchers.id, id) })
     if (!voucher) throw new Error('VOUCHER_NOT_FOUND')
 
+    const cleanCode = cleanVoucherCode(voucher.code)
+
     await tx.delete(vouchers).where(eq(vouchers.id, id))
-    await tx.delete(radcheck).where(eq(radcheck.username, voucher.code))
-    await tx.delete(radreply).where(eq(radreply.username, voucher.code))
+    await tx.delete(radcheck).where(eq(radcheck.username, cleanCode))
+    await tx.delete(radreply).where(eq(radreply.username, cleanCode))
   })
 }

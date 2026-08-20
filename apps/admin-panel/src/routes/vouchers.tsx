@@ -3,6 +3,7 @@ import { Check, Copy, Eye, Plus, QrCode, Ticket, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGenerateVoucherBatch, useRevokeVoucher, useVouchers, type Voucher } from '../hooks/use-vouchers.js'
 import { useWifiProfiles } from '../hooks/use-members.js'
+import { formatVoucherCode } from '../lib/voucher-utils.js'
 import { DataTable, type Column, type SortState } from '../components/data-table.js'
 import { Drawer } from '../components/drawer.js'
 import { DropdownMenu } from '../components/dropdown-menu.js'
@@ -85,7 +86,7 @@ export function VouchersPage() {
                 onClick={() => setSelectedVoucher(v)}
                 className="font-mono text-sm font-semibold tracking-wider text-ink hover:text-primary transition-colors text-left"
               >
-                {v.code}
+                {formatVoucherCode(v.code)}
               </button>
               <button
                 type="button"

@@ -6,6 +6,7 @@ import {
   Outlet,
 } from '@tanstack/react-router'
 import { authClient } from '../lib/auth-client.js'
+import { api } from '../lib/api.js'
 import { LoginPage } from './login.js'
 import { DashboardPage } from './dashboard.js'
 import { ProfilePage } from './profile.js'
@@ -30,7 +31,7 @@ const rootRoute = createRootRoute({
 })
 
 // ---------------------------------------------------------------------------
-// Guard helper — checa sessão antes de entrar em rotas protegidas
+// Guard helpers — checagem de nível de acesso (RBAC)
 // ---------------------------------------------------------------------------
 async function requireAuth() {
   const result = await authClient.getSession()
@@ -39,6 +40,31 @@ async function requireAuth() {
     throw redirect({ to: '/login' })
   }
   return session
+}
+
+async function fetchUserRoles(): Promise<string[]> {
+  try {
+    const res = await api<{ data: { roles: string[] } }>('/me')
+    return res.data?.roles ?? []
+  } catch {
+    return []
+  }
+}
+
+async function requireCoordinatorGuard() {
+  await requireAuth()
+  const roles = await fetchUserRoles()
+  if (!roles.includes('admin') && !roles.includes('coordenador')) {
+    throw redirect({ to: '/dashboard' })
+  }
+}
+
+async function requireAdminGuard() {
+  await requireAuth()
+  const roles = await fetchUserRoles()
+  if (!roles.includes('admin')) {
+    throw redirect({ to: '/dashboard' })
+  }
 }
 
 const authenticatedRoute = createRoute({
@@ -55,8 +81,7 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   component: LoginPage,
-    beforeLoad: async () => {
-      // Se já tem sessão, redireciona para dashboard
+  beforeLoad: async () => {
     const result = await authClient.getSession()
     const session = result && 'data' in result ? result.data : result
     if (session) throw redirect({ to: '/dashboard' })
@@ -79,7 +104,7 @@ const termosRoute = createRoute({
 })
 
 // ---------------------------------------------------------------------------
-// /dashboard — protegida
+// Rotas com Proteção de Nível de Acesso (RBAC)
 // ---------------------------------------------------------------------------
 const dashboardRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -94,13 +119,53 @@ const profileRoute = createRoute({
   component: ProfilePage,
 })
 
-const membersRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/members', component: MembersPage })
-const newMemberRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/members/new', component: NewMemberPage })
-const memberDetailRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/members/$memberId', component: MemberDetailPage })
-const rolesRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/roles', component: RolesPage })
-const wifiProfilesRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/wifi-profiles', component: WifiProfilesPage })
-const vouchersRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/vouchers', component: VouchersPage })
-const presenceRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/presence', component: PresencePage })
+const membersRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/members',
+  component: MembersPage,
+  beforeLoad: requireCoordinatorGuard,
+})
+
+const newMemberRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/members/new',
+  component: NewMemberPage,
+  beforeLoad: requireCoordinatorGuard,
+})
+
+const memberDetailRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/members/$memberId',
+  component: MemberDetailPage,
+  beforeLoad: requireCoordinatorGuard,
+})
+
+const rolesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/roles',
+  component: RolesPage,
+  beforeLoad: requireAdminGuard,
+})
+
+const wifiProfilesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/wifi-profiles',
+  component: WifiProfilesPage,
+  beforeLoad: requireCoordinatorGuard,
+})
+
+const vouchersRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/vouchers',
+  component: VouchersPage,
+  beforeLoad: requireCoordinatorGuard,
+})
+
+const presenceRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/presence',
+  component: PresencePage,
+})
 
 // ---------------------------------------------------------------------------
 // / → redireciona para /dashboard
@@ -119,7 +184,17 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   politicasRoute,
   termosRoute,
-  authenticatedRoute.addChildren([dashboardRoute, profileRoute, membersRoute, newMemberRoute, memberDetailRoute, rolesRoute, wifiProfilesRoute, vouchersRoute, presenceRoute]),
+  authenticatedRoute.addChildren([
+    dashboardRoute,
+    profileRoute,
+    membersRoute,
+    newMemberRoute,
+    memberDetailRoute,
+    rolesRoute,
+    wifiProfilesRoute,
+    vouchersRoute,
+    presenceRoute,
+  ]),
 ])
 
 export const router = createRouter({

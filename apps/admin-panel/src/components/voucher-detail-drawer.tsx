@@ -3,6 +3,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { Check, Copy, QrCode, ShieldOff, Ticket, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRevokeVoucher, type Voucher } from '../hooks/use-vouchers.js'
+import { formatVoucherCode } from '../lib/voucher-utils.js'
 import { Drawer } from './drawer.js'
 
 export type VoucherDetailDrawerProps = {
@@ -51,7 +52,7 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
 
   function copyCode() {
     if (!voucher) return
-    navigator.clipboard.writeText(voucher.code)
+    navigator.clipboard.writeText(formatVoucherCode(voucher.code))
     setCopiedCode(true)
     toast.success('Código do voucher copiado!')
     setTimeout(() => setCopiedCode(false), 2000)
@@ -126,7 +127,7 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
 
             <div className="p-2 bg-white rounded-xl shadow-xs border border-hairline">
               <QRCodeSVG
-                value={voucher.code}
+                value={formatVoucherCode(voucher.code)}
                 size={180}
                 bgColor="#ffffff"
                 fgColor="#0f172a"
@@ -139,7 +140,7 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
             <div className="w-full space-y-2">
               <div className="flex items-center justify-between rounded-xl bg-surface-soft border border-hairline p-3">
                 <span className="font-mono text-base font-semibold tracking-wider text-primary select-all">
-                  {voucher.code}
+                  {formatVoucherCode(voucher.code)}
                 </span>
                 <button
                   type="button"
@@ -193,7 +194,7 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
           <div className="relative z-10 w-[calc(100%-2rem)] max-w-md rounded-2xl border border-hairline bg-surface p-6 shadow-2xl">
             <h2 className="text-xl font-light tracking-tight text-ink">Inativar / Revogar Voucher?</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-              O código <strong>{voucher.code}</strong> será inativado e excluído do FreeRADIUS. O visitante não conseguirá mais se conectar com este código.
+              O código <strong>{formatVoucherCode(voucher.code)}</strong> será inativado e excluído do FreeRADIUS. O visitante não conseguirá mais se conectar com este código.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button

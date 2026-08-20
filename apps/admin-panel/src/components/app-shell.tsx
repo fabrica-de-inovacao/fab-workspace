@@ -1,11 +1,26 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, Outlet, useLocation, useRouter, useRouterState } from '@tanstack/react-router'
-import { ChevronDown, LayoutDashboard, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Settings, Sliders, Sun, Ticket, Users, Wifi, X } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Settings, Shield, Sliders, Sun, Ticket, Users, Wifi, X } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { authClient } from '../lib/auth-client.js'
+import { useMe } from '../hooks/use-me.js'
 import { SettingsDialog } from './settings-dialog.js'
 
-const navGroups = [
+type RoleRequired = 'admin' | 'coordinator'
+
+interface NavItem {
+  to: string
+  label: string
+  icon: any
+  requiredRole?: RoleRequired
+}
+
+interface NavGroup {
+  title: string
+  items: NavItem[]
+}
+
+const navGroups: NavGroup[] = [
   {
     title: 'Principal',
     items: [
@@ -15,24 +30,32 @@ const navGroups = [
   {
     title: 'Membros',
     items: [
-      { to: '/members', label: 'Membros', icon: Users },
+      { to: '/members', label: 'Membros', icon: Users, requiredRole: 'coordinator' },
     ],
   },
   {
     title: 'Rede',
     items: [
-      { to: '/wifi-profiles', label: 'Perfis Wi-Fi', icon: Sliders },
-      { to: '/vouchers', label: 'Vouchers', icon: Ticket },
+      { to: '/wifi-profiles', label: 'Perfis Wi-Fi', icon: Sliders, requiredRole: 'coordinator' },
+      { to: '/vouchers', label: 'Vouchers', icon: Ticket, requiredRole: 'coordinator' },
       { to: '/presence', label: 'Presença Wi-Fi', icon: Wifi },
     ],
   },
-] as const
+  {
+    title: 'Sistema',
+    items: [
+      { to: '/roles', label: 'Perfis de Acesso', icon: Shield, requiredRole: 'admin' },
+    ],
+  },
+]
 
 export function AppShell() {
   const router = useRouter()
   const location = useLocation()
   const isNavigating = useRouterState({ select: (state) => state.isLoading })
   const { data: session } = authClient.useSession()
+  const { isAdmin, isCoordinator } = useMe()
+
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
@@ -43,7 +66,14 @@ export function AppShell() {
     'Principal': true,
     'Membros': true,
     'Rede': true,
+    'Sistema': true,
   })
+
+  function isItemVisible(requiredRole?: RoleRequired) {
+    if (requiredRole === 'admin') return isAdmin
+    if (requiredRole === 'coordinator') return isCoordinator
+    return true
+  }
 
   function toggleGroup(title: string) {
     setExpandedGroups((prev) => ({ ...prev, [title]: !prev[title] }))
@@ -98,8 +128,11 @@ export function AppShell() {
       <Tooltip.Provider delayDuration={300}>
         <nav className="flex-1 space-y-3 overflow-y-auto px-4 py-2">
           {navGroups.map((group) => {
+            const visibleItems = group.items.filter((item) => isItemVisible(item.requiredRole))
+            if (visibleItems.length === 0) return null
+
             const isExpanded = expandedGroups[group.title] ?? true
-            const hasActiveChild = group.items.some((item) => isActive(item.to))
+            const hasActiveChild = visibleItems.some((item) => isActive(item.to))
 
             return (
               <div key={group.title}>
@@ -120,7 +153,7 @@ export function AppShell() {
 
                 {(isExpanded || collapsed) && (
                   <div className="mt-0.5 space-y-0.5">
-                    {group.items.map((item) => {
+                    {visibleItems.map((item) => {
                       const active = isActive(item.to)
                       const link = (
                         <Link

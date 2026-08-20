@@ -3,7 +3,7 @@ import type { Context } from 'hono'
 import { db, roles } from '@fabrica/db'
 import { asc } from 'drizzle-orm'
 import { z } from 'zod'
-import { requireAdmin, requireCoordinator } from '../middleware/require-auth.js'
+import { requireAdmin, requireAuth, requireCoordinator } from '../middleware/require-auth.js'
 import { API_PREFIX } from '../lib/paths.js'
 import {
   createMember,
@@ -51,6 +51,30 @@ function errorResponse(c: Context, error: unknown) {
 }
 
 export const membersRouter = new OpenAPIHono()
+
+// ---------------------------------------------------------------------------
+// /api/v1/me — Obter dados e papéis do usuário autenticado
+// ---------------------------------------------------------------------------
+membersRouter.get(`${API_PREFIX}/me`, requireAuth, async (c: any) => {
+  const user = c.get('user')
+  const userRoleNames = (user?.userRoles ?? [])
+    .map((ur: { role?: { name: string } }) => ur.role?.name)
+    .filter((name: string | undefined): name is string => typeof name === 'string')
+
+  return c.json({
+    data: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      cpf: user.cpf,
+      phone: user.phone,
+      active: user.active,
+      roles: userRoleNames,
+    },
+  })
+})
+
+membersRouter.use(`${API_PREFIX}/members`, requireCoordinator)
 membersRouter.use(`${API_PREFIX}/members/*`, requireCoordinator)
 membersRouter.use(`${API_PREFIX}/roles`, requireCoordinator)
 membersRouter.use(`${API_PREFIX}/roles/*`, requireCoordinator)

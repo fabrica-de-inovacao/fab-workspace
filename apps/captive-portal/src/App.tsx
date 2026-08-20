@@ -6,6 +6,24 @@ import { QRScanner } from './components/qr-scanner.js'
 
 type Mode = 'credentials' | 'voucher'
 
+export function cleanVoucherCode(code: string): string {
+  return code.replace(/[^A-Z0-9]/gi, '').toUpperCase()
+}
+
+export function formatVoucherInput(code: string): string {
+  const clean = cleanVoucherCode(code)
+  if (!clean) return ''
+  if (clean.startsWith('FAB')) {
+    const prefix = clean.slice(0, 3)
+    const part1 = clean.slice(3, 7)
+    const part2 = clean.slice(7, 11)
+    const rest = clean.slice(11)
+    return [prefix, part1, part2, rest].filter(Boolean).join('-')
+  }
+  const chunks = clean.match(/.{1,4}/g)
+  return chunks ? chunks.join('-') : clean
+}
+
 export function App() {
   const params = parseMikroTikParams(window.location.search)
   const [mode, setMode] = useState<Mode>('credentials')
@@ -27,15 +45,17 @@ export function App() {
   }
 
   function handleQRScan(code: string) {
-    const cleanCode = code.trim().toUpperCase()
-    setVoucher(cleanCode)
+    const formatted = formatVoucherInput(code)
+    setVoucher(formatted)
     setScanning(false)
     setLocalError('')
   }
 
+  const cleanVoucher = cleanVoucherCode(voucher)
+
   const canSubmit = mode === 'credentials'
     ? username.trim().length > 0 && password.length > 0
-    : voucher.trim().length > 0
+    : cleanVoucher.length > 0
 
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#fcfcfd] p-4">
@@ -164,7 +184,10 @@ export function App() {
               <form action={params.linkLogin || undefined} method="post" onSubmit={submit} className="space-y-5">
                 <input type="hidden" name="dst" value={params.linkOrig} />
                 <input type="hidden" name="popup" value="true" />
-                <input type="hidden" name="password" value={voucher} />
+                
+                {/* Envia os valores limpos (sem hífen, caixa alta) para a autenticação RADIUS */}
+                <input type="hidden" name="username" value={cleanVoucher} />
+                <input type="hidden" name="password" value={cleanVoucher} />
 
                 {/* Leitor de QR Code Ativo por Padrão */}
                 {scanning ? (
@@ -199,13 +222,15 @@ export function App() {
                       <input
                         id="cp-voucher"
                         type="text"
-                        name="username"
                         value={voucher}
-                        onChange={(e) => { setVoucher(e.target.value); setLocalError('') }}
+                        onChange={(e) => {
+                          setVoucher(formatVoucherInput(e.target.value))
+                          setLocalError('')
+                        }}
                         autoComplete="off"
                         required
-                        placeholder="Ex: FAB-ABCD-1234"
-                        className="h-11 w-full rounded-xl border border-hairline-input bg-white/70 pl-10 pr-3.5 text-sm font-normal text-ink uppercase tracking-wider transition-all duration-200 placeholder:text-ink-muted/40 placeholder:normal-case placeholder:tracking-normal focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
+                        placeholder="FAB-ABCD-1234"
+                        className="h-11 w-full rounded-xl border border-hairline-input bg-white/70 pl-10 pr-3.5 text-sm font-mono font-medium text-ink uppercase tracking-wider transition-all duration-200 placeholder:text-ink-muted/40 placeholder:font-sans placeholder:tracking-normal focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -231,7 +256,7 @@ export function App() {
               </p>
             )}
 
-            {/* Aviso de Políticas e Termos (Obrigatório no Captive Portal) */}
+            {/* Aviso de Políticas e Termos */}
             <footer className="mt-8 pt-4 border-t border-hairline text-center text-[11px] text-ink-muted/60 leading-relaxed">
               <p>
                 Ao conectar nesta rede, você atesta que concorda com os{' '}
