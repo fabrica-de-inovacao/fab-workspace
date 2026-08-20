@@ -5,6 +5,7 @@ import { App } from './App.js'
 import { PoliticasPage } from './pages/politicas.js'
 import { TermosPage } from './pages/termos.js'
 import { NotFoundPage } from './pages/not-found.js'
+import { AfterLoginPage } from './pages/after-login.js'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('#root not found')
@@ -14,6 +15,9 @@ function Root() {
 
   if (pathname === '/' || pathname === '/index.html') {
     return <App />
+  }
+  if (pathname === '/alogin' || pathname === '/status' || pathname === '/after-login' || pathname === '/success') {
+    return <AfterLoginPage />
   }
   if (pathname === '/politicas') {
     return <PoliticasPage />
