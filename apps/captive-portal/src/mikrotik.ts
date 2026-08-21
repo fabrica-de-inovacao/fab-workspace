@@ -9,6 +9,7 @@ export type MikroTikParams = {
   bytesIn: string
   bytesOut: string
   error: string
+  errorOrig: string
   success: boolean
   allowedHosts: string[]
 }
@@ -26,6 +27,7 @@ export function parseMikroTikParams(search: string): MikroTikParams {
     bytesIn: params.get('bytes-in') ?? '',
     bytesOut: params.get('bytes-out') ?? '',
     error: params.get('error') ?? '',
+    errorOrig: params.get('error-orig') ?? '',
     success: params.get('success') === 'true' || params.get('status') === 'connected',
     allowedHosts: String(params.get('allowed-hosts') ?? (import.meta.env as Record<string, string | undefined>)['VITE_MIKROTIK_LOGIN_HOSTS'] ?? '').split(',').map((host: string) => host.trim().toLowerCase()).filter(Boolean),
   }

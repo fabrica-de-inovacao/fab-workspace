@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Camera, Eye, EyeOff, Keyboard, Loader2, Ticket, Wifi } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Ticket, Wifi } from 'lucide-react'
 import { isValidLoginUrl, parseMikroTikParams } from './mikrotik.js'
 import { BackgroundAnimation } from './components/background-animation.js'
-import { QRScanner } from './components/qr-scanner.js'
 
 type Mode = 'credentials' | 'voucher'
 
@@ -33,7 +32,6 @@ export function App() {
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [localError, setLocalError] = useState('')
-  const [scanning, setScanning] = useState(true)
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     if (!isValidLoginUrl(params.linkLogin, params.allowedHosts)) {
@@ -42,13 +40,6 @@ export function App() {
       return
     }
     setSubmitting(true)
-  }
-
-  function handleQRScan(code: string) {
-    const formatted = formatVoucherInput(code)
-    setVoucher(formatted)
-    setScanning(false)
-    setLocalError('')
   }
 
   const cleanVoucher = cleanVoucherCode(voucher)
@@ -85,7 +76,7 @@ export function App() {
             <div className="mb-6 flex rounded-full border border-hairline-input bg-surface-soft p-1">
               <button
                 type="button"
-                onClick={() => { setMode('credentials'); setLocalError(''); setScanning(false) }}
+                onClick={() => { setMode('credentials'); setLocalError('') }}
                 className={`flex-1 rounded-full py-2 text-sm transition-all duration-200 ${
                   mode === 'credentials'
                     ? 'bg-primary text-white shadow-sm font-medium'
@@ -96,7 +87,7 @@ export function App() {
               </button>
               <button
                 type="button"
-                onClick={() => { setMode('voucher'); setLocalError(''); setScanning(true) }}
+                onClick={() => { setMode('voucher'); setLocalError('') }}
                 className={`flex-1 rounded-full py-2 text-sm transition-all duration-200 ${
                   mode === 'voucher'
                     ? 'bg-primary text-white shadow-sm font-medium'
@@ -107,14 +98,19 @@ export function App() {
               </button>
             </div>
 
-            {(params.error || localError) && (
+            {(params.error || params.errorOrig || localError) && (
               <div
                 role="alert"
-                className="mb-5 flex items-start gap-2.5 rounded-xl border border-error/15 bg-error-soft px-3.5 py-3 animate-[shake_0.35s_ease-in-out]"
+                className="mb-5 rounded-xl border border-error/15 bg-error-soft px-3.5 py-3 animate-[shake_0.35s_ease-in-out] space-y-1"
               >
-                <p className="text-xs leading-relaxed text-error">
-                  {localError || friendlyError(params.error)}
+                <p className="text-xs font-semibold leading-relaxed text-error">
+                  {localError || friendlyError(params.error || params.errorOrig)}
                 </p>
+                {!localError && (params.error || params.errorOrig) && (
+                  <p className="text-[10px] text-error/60 font-mono">
+                    Detalhe: {params.error || params.errorOrig}
+                  </p>
+                )}
               </div>
             )}
 
@@ -184,57 +180,34 @@ export function App() {
               <form action={params.linkLogin || undefined} method="post" onSubmit={submit} className="space-y-5">
                 <input type="hidden" name="dst" value={params.linkOrig} />
                 <input type="hidden" name="popup" value="true" />
-                
-                {/* Envia os valores limpos (sem hífen, caixa alta) para a autenticação RADIUS */}
+
                 <input type="hidden" name="username" value={cleanVoucher} />
                 <input type="hidden" name="password" value={cleanVoucher} />
 
-                {/* Leitor de QR Code Ativo por Padrão */}
-                {scanning ? (
-                  <div className="space-y-3">
-                    <QRScanner onScan={handleQRScan} onClose={() => setScanning(false)} />
-                    <button
-                      type="button"
-                      onClick={() => setScanning(false)}
-                      className="flex w-full items-center justify-center gap-1.5 text-xs text-ink-muted hover:text-primary transition-colors py-1"
-                    >
-                      <Keyboard size={14} />
-                      <span>Ou digite o código manualmente</span>
-                    </button>
+                <div>
+                  <label htmlFor="cp-voucher" className="mb-1.5 block text-xs font-medium tracking-wide text-ink-muted">
+                    Código do voucher
+                  </label>
+                  <div className="relative">
+                    <Ticket size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted/40" />
+                    <input
+                      id="cp-voucher"
+                      type="text"
+                      value={voucher}
+                      onChange={(e) => {
+                        setVoucher(formatVoucherInput(e.target.value))
+                        setLocalError('')
+                      }}
+                      autoComplete="off"
+                      required
+                      placeholder="FAB-ABCD-1234"
+                      className="h-11 w-full rounded-xl border border-hairline-input bg-white/70 pl-10 pr-3.5 text-sm font-mono font-medium text-ink uppercase tracking-wider transition-all duration-200 placeholder:text-ink-muted/40 placeholder:font-sans placeholder:tracking-normal focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
+                    />
                   </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label htmlFor="cp-voucher" className="text-xs font-medium tracking-wide text-ink-muted">
-                        Código do voucher
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setScanning(true)}
-                        className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:text-primary-hover transition-colors"
-                      >
-                        <Camera size={14} />
-                        <span>Abrir Câmera</span>
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Ticket size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted/40" />
-                      <input
-                        id="cp-voucher"
-                        type="text"
-                        value={voucher}
-                        onChange={(e) => {
-                          setVoucher(formatVoucherInput(e.target.value))
-                          setLocalError('')
-                        }}
-                        autoComplete="off"
-                        required
-                        placeholder="FAB-ABCD-1234"
-                        className="h-11 w-full rounded-xl border border-hairline-input bg-white/70 pl-10 pr-3.5 text-sm font-mono font-medium text-ink uppercase tracking-wider transition-all duration-200 placeholder:text-ink-muted/40 placeholder:font-sans placeholder:tracking-normal focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                )}
+                  <p className="mt-2 text-[11px] text-ink-muted/50">
+                    Insira o código fornecido na recepção da Fábrica.
+                  </p>
+                </div>
 
                 <button
                   type="submit"
@@ -290,7 +263,33 @@ function Success() {
 
 function friendlyError(error: string) {
   const value = error.toLowerCase()
-  if (value.includes('invalid') || value.includes('password') || value.includes('login')) return 'Senha ou voucher inválido. Verifique e tente novamente.'
-  if (value.includes('blocked') || value.includes('disabled')) return 'Seu acesso está inativo. Procure a equipe da Fábrica.'
-  return 'Não foi possível conectar. Verifique seus dados e tente novamente.'
+
+  if (value.includes('invalid') || value.includes('password') || value.includes('login') || value.includes('failed to authenticate')) {
+    return 'Credenciais inválidas. Verifique seu email/senha ou código de voucher e tente novamente.'
+  }
+  if (value.includes('not found') || value.includes('unknown user') || value.includes('no entry')) {
+    return 'Usuário não encontrado. Verifique se o cadastro está ativo na plataforma.'
+  }
+  if (value.includes('disabled') || value.includes('inactive')) {
+    return 'Seu acesso está desativado. Procure a administração da Fábrica.'
+  }
+  if (value.includes('expired') || value.includes('session timeout')) {
+    return 'Sua sessão ou voucher expirou. Faça login novamente ou solicite um novo voucher.'
+  }
+  if (value.includes('maximum') || value.includes('concurrent') || value.includes('session limit') || value.includes('already logged in')) {
+    return 'Limite de sessões simultâneas atingido. Desconecte de outro dispositivo ou aguarde alguns minutos.'
+  }
+  if (value.includes('nas') || value.includes('radius') || value.includes('server error')) {
+    return 'Erro de comunicação com o servidor de autenticação. Tente novamente em instantes.'
+  }
+  if (value.includes('no valid session')) {
+    return 'Nenhuma sessão ativa encontrada. Conecte-se novamente à rede.'
+  }
+  if (value.includes('locked') || value.includes('locked out') || value.includes('too many')) {
+    return 'Conta bloqueada por tentativas excessivas. Aguarde ou procure a administração.'
+  }
+  if (value.includes('change') || value.includes('password must')) {
+    return 'Senha temporária detectada. Troque sua senha no painel antes de conectar.'
+  }
+  return 'Não foi possível conectar. Verifique seus dados ou tente novamente.'
 }

@@ -14,6 +14,7 @@ describe('MikroTik parameters', () => {
       bytesIn: '',
       bytesOut: '',
       error: 'invalid',
+      errorOrig: '',
       success: false,
       allowedHosts: [],
     })
