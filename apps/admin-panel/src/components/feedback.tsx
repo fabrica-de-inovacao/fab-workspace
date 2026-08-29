@@ -6,11 +6,11 @@ export function StatusBadge({ active, status }: { active?: boolean; status?: 'pe
 }
 
 export function SkeletonRow() {
-  return <div className="h-12 animate-pulse rounded-lg bg-gradient-to-r from-surface-soft via-hairline to-surface-soft bg-[length:200%_100%]" />
+  return <div className="h-12 rounded-lg bg-gradient-to-r from-surface-soft via-hairline to-surface-soft bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
 }
 
 export function SkeletonCard() {
-  return <div className="h-40 animate-pulse rounded-2xl bg-gradient-to-r from-surface via-hairline to-surface bg-[length:200%_100%]" />
+  return <div className="h-40 rounded-2xl bg-gradient-to-r from-surface via-hairline to-surface bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
 }
 
 export function EmptyState({ title, description, action }: { title: string; description: string; action?: React.ReactNode }) {

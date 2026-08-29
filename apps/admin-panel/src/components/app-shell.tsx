@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link, Outlet, useLocation, useRouter, useRouterState } from '@tanstack/react-router'
+import { Link, Outlet, useLocation, useRouteContext, useRouter, useRouterState } from '@tanstack/react-router'
 import { ChevronDown, LayoutDashboard, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Settings, Shield, Sliders, Sun, Ticket, Users, Wifi, X } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
+import * as Dialog from '@radix-ui/react-dialog'
 import { authClient } from '../lib/auth-client.js'
-import { useMe } from '../hooks/use-me.js'
 import { SettingsDialog } from './settings-dialog.js'
 
 type RoleRequired = 'admin' | 'coordinator'
@@ -38,7 +38,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: '/wifi-profiles', label: 'Perfis Wi-Fi', icon: Sliders, requiredRole: 'coordinator' },
       { to: '/vouchers', label: 'Vouchers', icon: Ticket, requiredRole: 'coordinator' },
-      { to: '/presence', label: 'Presença Wi-Fi', icon: Wifi },
+      { to: '/presence', label: 'Presença Wi-Fi', icon: Wifi, requiredRole: 'coordinator' },
     ],
   },
   {
@@ -54,11 +54,17 @@ export function AppShell() {
   const location = useLocation()
   const isNavigating = useRouterState({ select: (state) => state.isLoading })
   const { data: session } = authClient.useSession()
-  const { isAdmin, isCoordinator } = useMe()
+  const { roles } = useRouteContext({ from: '/authenticated' })
+  const isAdmin = roles.includes('admin')
+  const isCoordinator = isAdmin || roles.includes('coordenador')
 
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const saved = window.localStorage.getItem('fab-theme')
+    return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -68,6 +74,11 @@ export function AppShell() {
     'Rede': true,
     'Sistema': true,
   })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode)
+    window.localStorage.setItem('fab-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
 
   function isItemVisible(requiredRole?: RoleRequired) {
     if (requiredRole === 'admin') return isAdmin
@@ -99,11 +110,14 @@ export function AppShell() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [userMenuOpen])
 
-  const sidebar = (
-    <aside className={`flex h-full flex-col transition-[width] duration-200 ease-out ${collapsed ? 'w-16' : 'w-60'}`}>
+  const sidebar = (mobile = false) => {
+    const isCollapsed = !mobile && collapsed
+
+    return (
+    <aside className={`flex h-full flex-col border-r border-hairline bg-surface transition-[width] duration-200 ease-out ${isCollapsed ? 'w-16' : 'w-60'}`}>
       {/* Header */}
-      <div className={`flex h-14 shrink-0 items-center ${collapsed ? 'justify-center' : 'px-4'}`}>
-        {!collapsed && (
+      <div className={`flex h-14 shrink-0 items-center ${isCollapsed ? 'justify-center' : 'px-4'}`}>
+        {!isCollapsed && (
           <div className="flex flex-1 items-center gap-2.5">
             <img src="/branding/fabitz_logo.svg" alt="" className="h-7 w-auto shrink-0" />
             <div className="min-w-0">
@@ -113,33 +127,37 @@ export function AppShell() {
           </div>
         )}
         <button
+          type="button"
           onClick={() => setCollapsed((v) => !v)}
-          className="hidden shrink-0 rounded-lg p-1.5 text-ink-muted/50 transition-colors hover:bg-white/60 hover:text-ink lg:block"
-          aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+          className="hidden shrink-0 rounded-lg p-1.5 text-ink-muted/50 transition-colors hover:bg-surface-soft hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:block"
+          aria-label={isCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
         >
-          {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          {isCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
         </button>
-        <button onClick={() => setMobileOpen(false)} className="shrink-0 rounded-lg p-1.5 text-ink-muted/50 lg:hidden" aria-label="Fechar">
+        <button type="button" onClick={() => setMobileOpen(false)} className="shrink-0 rounded-lg p-1.5 text-ink-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:hidden" aria-label="Fechar">
           <X size={16} />
         </button>
       </div>
 
       {/* Nav */}
       <Tooltip.Provider delayDuration={300}>
-        <nav className="flex-1 space-y-3 overflow-y-auto px-4 py-2">
+        <nav aria-label="Navegação principal" className="flex-1 space-y-3 overflow-y-auto px-4 py-2">
           {navGroups.map((group) => {
             const visibleItems = group.items.filter((item) => isItemVisible(item.requiredRole))
             if (visibleItems.length === 0) return null
 
             const isExpanded = expandedGroups[group.title] ?? true
             const hasActiveChild = visibleItems.some((item) => isActive(item.to))
+            const groupId = `nav-group-${group.title.toLowerCase().replace(/\s+/g, '-')}`
 
             return (
               <div key={group.title}>
-                {!collapsed ? (
+                {!isCollapsed ? (
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.title)}
+                    aria-expanded={isExpanded}
+                    aria-controls={groupId}
                     className={`flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
                       hasActiveChild ? 'text-primary/60' : 'text-ink-muted/40 hover:text-ink-muted/70'
                     }`}
@@ -151,25 +169,26 @@ export function AppShell() {
                   <div className="mx-auto my-2 h-px w-5 rounded-full bg-ink-muted/15" />
                 )}
 
-                {(isExpanded || collapsed) && (
-                  <div className="mt-0.5 space-y-0.5">
+                {(isExpanded || isCollapsed) && (
+                  <div id={groupId} className="mt-0.5 space-y-0.5">
                     {visibleItems.map((item) => {
                       const active = isActive(item.to)
                       const link = (
                         <Link
                           to={item.to}
                           onClick={() => setMobileOpen(false)}
-                          className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] transition-all duration-150 ${
-                            active
-                              ? 'bg-white/80 font-medium text-primary shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
-                              : 'text-ink-muted hover:bg-white/50 hover:text-ink'
-                          } ${collapsed ? 'justify-center px-0' : ''}`}
+                           aria-current={active ? 'page' : undefined}
+                            className={`group flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] transition-[background-color,color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
+                              active
+                                ? 'bg-primary-soft/70 font-medium text-primary shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+                                : 'text-ink-muted hover:bg-surface-soft hover:text-ink'
+                           } ${isCollapsed ? 'justify-center px-0 pl-0' : ''}`}
                         >
                           <item.icon size={16} strokeWidth={active ? 1.8 : 1.5} className={`shrink-0 transition-colors ${active ? 'text-primary' : 'text-ink-muted/60 group-hover:text-ink-muted'}`} />
-                          {!collapsed && <span>{item.label}</span>}
+                          {!isCollapsed && <span>{item.label}</span>}
                         </Link>
                       )
-                      return collapsed ? (
+                      return isCollapsed ? (
                         <Tooltip.Root key={item.to}>
                           <Tooltip.Trigger asChild>{link}</Tooltip.Trigger>
                           <Tooltip.Portal>
@@ -196,8 +215,9 @@ export function AppShell() {
         <div ref={userMenuRef} className="relative">
           <button
             type="button"
-            onClick={() => !collapsed && setUserMenuOpen((o) => !o)}
-            className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-white/50 ${collapsed ? 'justify-center px-0' : ''}`}
+            onClick={() => setUserMenuOpen((o) => !o)}
+            aria-expanded={userMenuOpen}
+            className={`flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${isCollapsed ? 'justify-center px-0' : ''}`}
           >
             {session?.user.image ? (
               <img src={session.user.image} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white/60" />
@@ -206,7 +226,7 @@ export function AppShell() {
                 {session?.user.name?.[0] ?? '?'}
               </div>
             )}
-            {!collapsed && (
+            {!isCollapsed && (
               <div className="min-w-0 flex-1 text-left">
                 <p className="truncate text-[13px] font-medium text-ink">{session?.user.name}</p>
                 <p className="truncate text-[10px] text-ink-muted/50">{session?.user.email}</p>
@@ -215,8 +235,8 @@ export function AppShell() {
           </button>
 
           {/* Menu suspenso do usuário */}
-          {userMenuOpen && !collapsed && (
-            <div className="absolute bottom-full left-0 mb-1 w-56 rounded-xl border border-hairline bg-surface py-1 shadow-lg">
+          {userMenuOpen && (
+            <div className={`absolute z-50 w-56 rounded-xl border border-hairline bg-surface py-1 shadow-lg ${isCollapsed ? 'bottom-2 left-full ml-2' : 'bottom-full left-0 mb-1'}`}>
               <div className="border-b border-hairline px-3 py-2.5">
                 <p className="text-xs font-medium text-ink">{session?.user.name}</p>
                 <p className="text-[10px] text-ink-muted/60">{session?.user.email}</p>
@@ -258,43 +278,50 @@ export function AppShell() {
         </div>
       </div>
     </aside>
-  )
+    )
+  }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f1f4f8]">
+    <div className="flex h-screen overflow-hidden bg-surface-soft">
       {/* Loading bar */}
       <div className={`fixed inset-x-0 top-0 z-[60] h-0.5 overflow-hidden transition-opacity ${isNavigating ? 'opacity-100' : 'opacity-0'}`}>
         <div className="h-full w-1/3 animate-[navigation_1s_ease-in-out_infinite] bg-gradient-to-r from-primary via-accent to-secondary" />
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:block">{sidebar}</div>
+      <div className="hidden h-full lg:block">{sidebar()}</div>
 
       {/* Mobile sidebar */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button className="absolute inset-0 bg-ink/35" onClick={() => setMobileOpen(false)} aria-label="Fechar" />
-          <div className="relative h-full w-60">{sidebar}</div>
-        </div>
-      )}
+      <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/35 backdrop-blur-[1px] lg:hidden" />
+          <Dialog.Content asChild>
+            <div className="fixed inset-y-0 left-0 z-50 h-full w-[min(15rem,calc(100vw-3rem))] shadow-2xl lg:hidden">
+              <Dialog.Title className="sr-only">Navegação principal</Dialog.Title>
+              <Dialog.Description className="sr-only">Acesse as áreas do painel.</Dialog.Description>
+              {sidebar(true)}
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {/* Content */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center border-b border-hairline bg-surface px-4 lg:hidden">
-          <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-ink-muted">
+          <button type="button" onClick={() => setMobileOpen(true)} aria-label="Abrir navegação" className="rounded-lg p-2 text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
             <PanelLeftOpen size={20} />
           </button>
           <p className="ml-2 text-sm font-medium text-ink">FAB Workspace</p>
         </header>
 
-        <div className="flex-1 overflow-hidden p-3 sm:p-4">
-          <div className="flex h-full flex-col overflow-y-auto rounded-2xl border border-hairline bg-surface shadow-sm">
+        <div className="min-h-0 flex-1 overflow-hidden p-3 sm:p-4">
+          <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-hairline bg-surface shadow-sm">
             <Outlet />
           </div>
         </div>
       </div>
 
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} darkMode={darkMode} onDarkModeChange={setDarkMode} />
     </div>
   )
 }

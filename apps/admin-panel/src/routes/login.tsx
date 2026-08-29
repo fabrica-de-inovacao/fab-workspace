@@ -180,7 +180,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#fcfcfd] p-4">
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-surface-soft p-4">
       <BackgroundAnimation />
 
       <div
@@ -254,7 +254,7 @@ export function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 8 caracteres"
                   required
-                  className="h-11 w-full rounded-xl border border-hairline-input bg-white/70 px-3.5 pr-10 text-sm font-normal text-ink transition-all duration-200 placeholder:text-ink-muted/40 focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
+                  className="h-11 w-full rounded-xl border border-hairline-input bg-surface/70 px-3.5 pr-10 text-sm font-normal text-ink transition-all duration-200 placeholder:text-ink-muted/40 focus:border-primary focus:bg-surface focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
                 />
                 <button
                   type="button"
@@ -279,7 +279,7 @@ export function LoginPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repita a nova senha"
                 required
-                className="h-11 w-full rounded-xl border border-hairline-input bg-white/70 px-3.5 text-sm font-normal text-ink transition-all duration-200 placeholder:text-ink-muted/40 focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
+                className="h-11 w-full rounded-xl border border-hairline-input bg-surface/70 px-3.5 text-sm font-normal text-ink transition-all duration-200 placeholder:text-ink-muted/40 focus:border-primary focus:bg-surface focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
               />
             </div>
 
@@ -340,7 +340,7 @@ export function LoginPage() {
                   onChange={(e) => handleIdentifierChange(e.target.value)}
                   placeholder="admin@fabrica.com ou 000.000.000-00"
                   required
-                  className="h-11 w-full rounded-xl border border-hairline-input bg-white/70 px-3.5 text-sm font-normal text-ink transition-all duration-200 placeholder:text-ink-muted/40 focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
+              className="h-11 w-full rounded-xl border border-hairline-input bg-surface/70 px-3.5 text-sm font-normal text-ink transition-all duration-200 placeholder:text-ink-muted/40 focus:border-primary focus:bg-surface focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
                 />
               </div>
 
@@ -357,7 +357,7 @@ export function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="h-11 w-full rounded-xl border border-hairline-input bg-white/70 px-3.5 pr-10 text-sm font-normal text-ink transition-all duration-200 placeholder:text-ink-muted/40 focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
+                    className="h-11 w-full rounded-xl border border-hairline-input bg-surface/70 px-3.5 pr-10 text-sm font-normal text-ink transition-all duration-200 placeholder:text-ink-muted/40 focus:border-primary focus:bg-surface focus:shadow-[0_0_0_4px_rgba(0,102,161,0.10)] focus:outline-none"
                   />
                   <button
                     type="button"

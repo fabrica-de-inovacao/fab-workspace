@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type Member, type MemberInput, type Role, type WifiProfile, type WifiProfileInput } from '../lib/api.js'
 
 export type MemberFilters = { search?: string; page?: number; limit?: number; status?: 'active' | 'inactive'; roleId?: number; wifiProfileId?: number }
@@ -14,6 +14,7 @@ export function useMembers(filters: MemberFilters = {}) {
   return useQuery({
     queryKey: ['members', filters],
     queryFn: () => api<{ data: Member[]; total: number; page: number; limit: number }>(`/members?${params}`),
+    placeholderData: keepPreviousData,
   })
 }
 

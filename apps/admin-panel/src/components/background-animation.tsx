@@ -30,12 +30,21 @@ export function BackgroundAnimation() {
     const DOT_ALPHA = 0.55
 
     // Paleta alinhada ao tema (@theme em index.css)
-    const COLORS = {
+    const darkMode = document.documentElement.classList.contains('dark')
+    const COLORS = darkMode ? {
+      primary: '#55B6E3',
+      accent: '#62C4ED',
+      secondary: '#A8D86D',
+      warning: '#F4D35E',
+      dot: '#415469',
+      surface: '#111B26',
+    } : {
       primary: '#0066A1',
       accent: '#2EA3D2',
       secondary: '#8EC63F',
       warning: '#FFD100',
       dot: '#CBD5E1',
+      surface: '#FFFFFF',
     }
 
     // Zona de exclusão para o card de login (eixo px, CSS pixels).
@@ -106,7 +115,7 @@ export function BackgroundAnimation() {
       ctx.globalAlpha = opacity
       ctx.beginPath()
       ctx.arc(x * GRID_SIZE, y * GRID_SIZE, 5.5, 0, Math.PI * 2)
-      ctx.fillStyle = '#ffffff'
+      ctx.fillStyle = COLORS.surface
       ctx.fill()
       ctx.lineWidth = 2.4
       ctx.strokeStyle = COLORS.primary
@@ -136,7 +145,7 @@ export function BackgroundAnimation() {
       // Bulbo amarelo com brilho suave
       ctx.beginPath()
       ctx.arc(0, -30, 12, 0, Math.PI * 2)
-      ctx.fillStyle = '#ffffff'
+      ctx.fillStyle = COLORS.surface
       ctx.fill()
       ctx.lineWidth = 3.5
       ctx.strokeStyle = COLORS.warning
@@ -429,7 +438,7 @@ export function BackgroundAnimation() {
   }, [])
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[#fcfcfd]">
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-surface-soft">
       <canvas ref={canvasRef} className="block h-full w-full" />
     </div>
   )

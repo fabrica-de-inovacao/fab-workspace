@@ -5,22 +5,25 @@ import {
   redirect,
   Outlet,
 } from '@tanstack/react-router'
+import { lazy } from 'react'
 import { authClient } from '../lib/auth-client.js'
 import { api } from '../lib/api.js'
-import { LoginPage } from './login.js'
-import { DashboardPage } from './dashboard.js'
-import { ProfilePage } from './profile.js'
-import { MembersPage } from './members.js'
-import { NewMemberPage } from './member-new.js'
-import { MemberDetailPage } from './member-detail.js'
-import { RolesPage } from './roles.js'
-import { WifiProfilesPage } from './wifi-profiles.js'
-import { VouchersPage } from './vouchers.js'
-import { PresencePage } from './presence.js'
-import { PoliticasPage } from './politicas.js'
-import { TermosPage } from './termos.js'
-import { NotFoundPage } from './not-found.js'
 import { AppShell } from '../components/app-shell.js'
+import { RoutePending } from '../components/route-pending.js'
+
+const LoginPage = lazy(() => import('./login.js').then((module) => ({ default: module.LoginPage })))
+const DashboardPage = lazy(() => import('./dashboard.js').then((module) => ({ default: module.DashboardPage })))
+const ProfilePage = lazy(() => import('./profile.js').then((module) => ({ default: module.ProfilePage })))
+const MembersPage = lazy(() => import('./members.js').then((module) => ({ default: module.MembersPage })))
+const NewMemberPage = lazy(() => import('./member-new.js').then((module) => ({ default: module.NewMemberPage })))
+const MemberDetailPage = lazy(() => import('./member-detail.js').then((module) => ({ default: module.MemberDetailPage })))
+const RolesPage = lazy(() => import('./roles.js').then((module) => ({ default: module.RolesPage })))
+const WifiProfilesPage = lazy(() => import('./wifi-profiles.js').then((module) => ({ default: module.WifiProfilesPage })))
+const VouchersPage = lazy(() => import('./vouchers.js').then((module) => ({ default: module.VouchersPage })))
+const PresencePage = lazy(() => import('./presence.js').then((module) => ({ default: module.PresencePage })))
+const PoliticasPage = lazy(() => import('./politicas.js').then((module) => ({ default: module.PoliticasPage })))
+const TermosPage = lazy(() => import('./termos.js').then((module) => ({ default: module.TermosPage })))
+const NotFoundPage = lazy(() => import('./not-found.js').then((module) => ({ default: module.NotFoundPage })))
 
 // ---------------------------------------------------------------------------
 // Root route
@@ -51,18 +54,21 @@ async function fetchUserRoles(): Promise<string[]> {
   }
 }
 
-async function requireCoordinatorGuard() {
+type AuthenticatedContext = { roles: string[] }
+
+async function loadAuthenticatedContext(): Promise<AuthenticatedContext> {
   await requireAuth()
-  const roles = await fetchUserRoles()
-  if (!roles.includes('admin') && !roles.includes('coordenador')) {
+  return { roles: await fetchUserRoles() }
+}
+
+function requireCoordinatorGuard({ context }: { context: AuthenticatedContext }) {
+  if (!context.roles.includes('admin') && !context.roles.includes('coordenador')) {
     throw redirect({ to: '/dashboard' })
   }
 }
 
-async function requireAdminGuard() {
-  await requireAuth()
-  const roles = await fetchUserRoles()
-  if (!roles.includes('admin')) {
+function requireAdminGuard({ context }: { context: AuthenticatedContext }) {
+  if (!context.roles.includes('admin')) {
     throw redirect({ to: '/dashboard' })
   }
 }
@@ -71,7 +77,7 @@ const authenticatedRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'authenticated',
   component: AppShell,
-  beforeLoad: requireAuth,
+  beforeLoad: loadAuthenticatedContext,
 })
 
 // ---------------------------------------------------------------------------
@@ -110,7 +116,6 @@ const dashboardRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/dashboard',
   component: DashboardPage,
-  beforeLoad: requireAuth,
 })
 
 const profileRoute = createRoute({
@@ -165,6 +170,7 @@ const presenceRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/presence',
   component: PresencePage,
+  beforeLoad: requireCoordinatorGuard,
 })
 
 // ---------------------------------------------------------------------------
@@ -199,6 +205,7 @@ const routeTree = rootRoute.addChildren([
 
 export const router = createRouter({
   routeTree,
+  defaultPendingComponent: RoutePending,
   defaultNotFoundComponent: NotFoundPage,
 })
 

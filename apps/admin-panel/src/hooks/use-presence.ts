@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api.js'
 
 export type PresenceSession = {
@@ -10,7 +10,9 @@ export type PresenceSession = {
   mac: string | null
   startedAt: string | null
   updatedAt: string | null
+  lastSeenAt: string | null
   stoppedAt: string | null
+  status: 'online' | 'stale' | 'ended'
   durationSeconds: number | null
   inputBytes: string | null
   outputBytes: string | null
@@ -27,7 +29,7 @@ export function useOnlinePresence() {
   })
 }
 
-export function usePresenceHistory(filters: HistoryFilters) {
+export function usePresenceHistory(filters: HistoryFilters, enabled = true) {
   const params = new URLSearchParams()
   if (filters.page) params.set('page', String(filters.page))
   if (filters.limit) params.set('limit', String(filters.limit))
@@ -37,5 +39,18 @@ export function usePresenceHistory(filters: HistoryFilters) {
   return useQuery({
     queryKey: ['presence', 'history', filters],
     queryFn: () => api<{ data: PresenceSession[]; total: number; page: number; limit: number }>(`/presence/history?${params}`),
+    enabled,
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useDisconnectPresenceSession() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api<{ data: { sessionId: string; status: 'disconnect_requested' } }>(`/presence/sessions/${encodeURIComponent(id)}/disconnect`, { method: 'POST' }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['presence'] })
+      void queryClient.invalidateQueries({ queryKey: ['members'] })
+    },
   })
 }

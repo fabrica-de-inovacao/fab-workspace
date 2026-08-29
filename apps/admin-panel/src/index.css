@@ -40,9 +40,46 @@
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --color-primary:          #55B6E3;
+  --color-primary-hover:    #82C9EA;
+  --color-primary-soft:     #12384D;
+  --color-primary-50:       #0E2939;
+  --color-secondary:        #A8D86D;
+  --color-secondary-soft:   #243C24;
+  --color-secondary-700:    #C1E68F;
+  --color-warning:          #F4D35E;
+  --color-warning-soft:     #443B16;
+  --color-warning-700:      #F8E28D;
+  --color-accent:           #62C4ED;
+  --color-accent-soft:      #12384D;
+  --color-surface:          #111B26;
+  --color-surface-soft:     #0B121B;
+  --color-hairline:         #263647;
+  --color-hairline-input:   #415469;
+  --color-ink:              #E7EEF5;
+  --color-ink-muted:        #9AAABD;
+  --color-success:          #A8D86D;
+  --color-success-soft:     #243C24;
+  --color-error:            #F17878;
+  --color-error-soft:       #451F25;
+  --color-info:             #62C4ED;
+  --color-info-soft:        #12384D;
+}
+
 @keyframes navigation {
   from { transform: translateX(-100%); }
   to { transform: translateX(400%); }
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }
 
 @keyframes slideInRight {
@@ -78,11 +115,21 @@
   body {
     @apply bg-surface-soft text-ink;
     font-weight: 300;
+    transition: background-color 150ms ease-out, color 150ms ease-out;
   }
 
   /* Tabular figures em elementos com classe .tabular */
   .tabular {
     font-feature-settings: 'tnum';
     letter-spacing: -0.42px;
+  }
+
+  /* Utilities */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

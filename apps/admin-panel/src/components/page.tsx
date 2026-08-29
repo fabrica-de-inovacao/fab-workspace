@@ -1,6 +1,6 @@
 export function PageShell({ children, width = 'wide' }: { children: React.ReactNode; width?: 'wide' | 'medium' }) {
   return (
-    <main className={`flex flex-1 flex-col ${width === 'wide' ? '' : 'mx-auto w-full max-w-3xl'}`}>
+    <main className={`flex min-h-0 flex-1 flex-col ${width === 'wide' ? '' : 'mx-auto w-full max-w-3xl'}`}>
       {children}
     </main>
   )
@@ -25,7 +25,7 @@ export function PageHeader({ eyebrow, title, subtitle, actions }: { eyebrow?: st
 
 export function PageBody({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-5">
+    <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
       {children}
     </div>
   )

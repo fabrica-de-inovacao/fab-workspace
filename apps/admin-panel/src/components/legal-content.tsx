@@ -9,7 +9,7 @@ interface LegalContentProps {
 
 export function LegalContent({ title, updatedAt, children }: LegalContentProps) {
   return (
-    <div className="relative min-h-dvh flex flex-col bg-[#fcfcfd]">
+    <div className="relative min-h-dvh flex flex-col bg-surface-soft">
 
       {/* Top Bar / Header */}
       <header className="sticky top-0 z-30 border-b border-hairline bg-surface/80 backdrop-blur-xl">

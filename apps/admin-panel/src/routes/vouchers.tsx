@@ -192,7 +192,7 @@ export function VouchersPage() {
               }
             />
           ) : (
-            <DataTable rows={filtered} columns={columns} sort={sort} onSort={setSort} getRowKey={(v) => v.id} />
+            <DataTable rows={filtered} columns={columns} sort={sort} onSort={setSort} getRowKey={(v) => v.id} loading={vouchers.isFetching && !vouchers.isPending} />
           )}
         </div>
 

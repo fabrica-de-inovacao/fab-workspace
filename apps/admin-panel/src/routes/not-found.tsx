@@ -4,7 +4,7 @@ import { BackgroundAnimation } from '../components/background-animation.js'
 
 export function NotFoundPage() {
   return (
-    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#fcfcfd] p-4">
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-surface-soft p-4">
       <BackgroundAnimation />
 
       <div

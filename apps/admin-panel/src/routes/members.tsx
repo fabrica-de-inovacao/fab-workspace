@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, Eye, Pencil, Plus, ShieldOff, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useMembers, useMemberStatus, useRoles, useWifiProfiles } from '../hooks/use-members.js'
@@ -32,6 +32,7 @@ function formatCpf(cpf: string | null) {
 }
 
 export function MembersPage() {
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<'' | 'active' | 'inactive'>('')
   const [roleId, setRoleId] = useState('')
@@ -47,7 +48,15 @@ export function MembersPage() {
   const wifiProfiles = useWifiProfiles()
   const online = useOnlinePresence()
   const members = useMembers({ search, page, limit: PAGE_SIZE, ...(status && { status }), ...(roleId && { roleId: Number(roleId) }), ...(wifiProfileId && { wifiProfileId: Number(wifiProfileId) }) })
-  const onlineUsernames = new Set(online.data?.data.map((session) => session.username.toLowerCase()))
+  const onlineUsernames = new Set(online.data?.data.filter((session) => session.status === 'online').map((session) => session.username.toLowerCase()))
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setSearch(searchInput)
+      setPage(1)
+    }, 300)
+    return () => window.clearTimeout(timeout)
+  }, [searchInput])
 
   // Mutation de bloquear/reativar
   const blockMember = useMemberStatus(confirmBlock?.id ?? '', confirmBlock?.active ?? true)
@@ -128,8 +137,8 @@ export function MembersPage() {
     <PageBody>
       <div className="grid gap-3 sm:grid-cols-4">
         <SearchInput
-          value={search}
-          onChange={(v) => updateFilter(() => setSearch(v))}
+          value={searchInput}
+          onChange={setSearchInput}
           placeholder="Buscar por nome ou email"
         />
         <FormSelect
@@ -163,7 +172,7 @@ export function MembersPage() {
       </div>
 
       <div className="mt-5 rounded-xl border border-hairline">
-        {members.isPending ? <div className="space-y-3 p-4">{[1, 2, 3, 4].map((row) => <SkeletonRow key={row} />)}</div> : members.error ? <p className="p-6 text-sm text-error">{members.error.message}</p> : members.data.data.length === 0 ? <EmptyState title="Nenhum membro encontrado" description="Ajuste os filtros ou cadastre um novo membro para provisionar o acesso Wi-Fi." action={<button onClick={() => setNewMemberOpen(true)} className="rounded-full bg-primary px-4 py-2 text-sm text-white">Novo membro</button>} /> : <DataTable rows={members.data.data} columns={columns} sort={sort} onSort={setSort} getRowKey={(m) => m.id} />}
+        {members.isPending ? <div className="space-y-3 p-4">{[1, 2, 3, 4].map((row) => <SkeletonRow key={row} />)}</div> : members.error ? <p className="p-6 text-sm text-error">{members.error.message}</p> : members.data.data.length === 0 ? <EmptyState title="Nenhum membro encontrado" description="Ajuste os filtros ou cadastre um novo membro para provisionar o acesso Wi-Fi." action={<button onClick={() => setNewMemberOpen(true)} className="rounded-full bg-primary px-4 py-2 text-sm text-white">Novo membro</button>} /> : <DataTable rows={members.data.data} columns={columns} sort={sort} onSort={setSort} getRowKey={(m) => m.id} loading={members.isFetching && !members.isPending} />}
       </div>
 
       <NewMemberDrawer open={newMemberOpen} onOpenChange={setNewMemberOpen} />

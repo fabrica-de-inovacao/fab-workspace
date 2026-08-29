@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { authClient } from '../lib/auth-client.js'
 
 export type LinkedAccount = {
@@ -12,21 +12,22 @@ export type LinkedAccount = {
 }
 
 export function useLinkedAccounts() {
-  const [accounts, setAccounts] = useState<LinkedAccount[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  async function refresh() {
-    setLoading(true)
+  const query = useQuery({
+    queryKey: ['linked-accounts'],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
     const result = await authClient.listAccounts()
-    setAccounts(Array.isArray(result) ? (result as LinkedAccount[]) : 'data' in result ? (result.data as LinkedAccount[] | null) : null)
-    setError(!Array.isArray(result) && 'error' in result && result.error ? 'Não foi possível carregar os acessos vinculados.' : null)
-    setLoading(false)
+      if (!Array.isArray(result) && 'error' in result && result.error) {
+        throw new Error('Não foi possível carregar os acessos vinculados.')
+      }
+      return Array.isArray(result) ? result as LinkedAccount[] : 'data' in result ? result.data as LinkedAccount[] | null : null
+    },
+  })
+
+  return {
+    accounts: query.data ?? null,
+    loading: query.isPending,
+    error: query.error?.message ?? null,
+    refresh: query.refetch,
   }
-
-  useEffect(() => {
-    void refresh()
-  }, [])
-
-  return { accounts, loading, error, refresh }
 }

@@ -124,7 +124,7 @@ export function WifiProfilesPage() {
               action={<button onClick={() => setCreateOpen(true)} className="rounded-full bg-primary px-4 py-2 text-sm text-white">Novo perfil</button>}
             />
           ) : (
-            <DataTable rows={filtered} columns={columns} sort={sort} onSort={setSort} getRowKey={(p) => String(p.id)} />
+            <DataTable rows={filtered} columns={columns} sort={sort} onSort={setSort} getRowKey={(p) => String(p.id)} loading={profiles.isFetching && !profiles.isPending} />
           )}
         </div>
 
