@@ -8,6 +8,7 @@ import {
   timestamp,
   inet,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 
 // ---------------------------------------------------------------------------
@@ -59,28 +60,37 @@ export const radusergroup = pgTable('radusergroup', {
 // ---------------------------------------------------------------------------
 // radacct — log de contabilidade de sessões Wi-Fi (READ-ONLY pelo app)
 // ---------------------------------------------------------------------------
-export const radacct = pgTable('radacct', {
-  radacctid: bigserial('radacctid', { mode: 'bigint' }).primaryKey(),
-  acctsessionid: varchar('acctsessionid', { length: 64 }).notNull(),
-  acctuniqueid: varchar('acctuniqueid', { length: 32 }).notNull(),
-  username: varchar('username', { length: 64 }).notNull(),
-  realm: varchar('realm', { length: 64 }),
-  nasipaddress: inet('nasipaddress').notNull(),
-  nasportid: varchar('nasportid', { length: 32 }),
-  nasporttype: varchar('nasporttype', { length: 32 }),
-  acctstarttime: timestamp('acctstarttime'),
-  acctupdatetime: timestamp('acctupdatetime'),
-  acctstoptime: timestamp('acctstoptime'), // NULL = sessão ativa
-  acctsessiontime: integer('acctsessiontime'), // segundos conectado
-  acctauthentic: varchar('acctauthentic', { length: 32 }),
-  connectinfoStart: varchar('connectinfo_start', { length: 128 }),
-  connectinfoStop: varchar('connectinfo_stop', { length: 128 }),
-  acctinputoctets: bigint('acctinputoctets', { mode: 'bigint' }), // download em bytes
-  acctoutputoctets: bigint('acctoutputoctets', { mode: 'bigint' }), // upload em bytes
-  calledstationid: varchar('calledstationid', { length: 50 }), // MAC/SSID do AP
-  callingstationid: varchar('callingstationid', { length: 50 }), // MAC do dispositivo
-  acctterminatecause: varchar('acctterminatecause', { length: 32 }),
-  servicetype: varchar('servicetype', { length: 32 }),
-  framedprotocol: varchar('framedprotocol', { length: 32 }),
-  framedipaddress: inet('framedipaddress'), // IP entregue ao membro
-})
+export const radacct = pgTable(
+  'radacct',
+  {
+    radacctid: bigserial('radacctid', { mode: 'bigint' }).primaryKey(),
+    acctsessionid: varchar('acctsessionid', { length: 64 }).notNull(),
+    acctuniqueid: varchar('acctuniqueid', { length: 32 }).notNull(),
+    username: varchar('username', { length: 64 }).notNull(),
+    realm: varchar('realm', { length: 64 }),
+    nasipaddress: inet('nasipaddress').notNull(),
+    nasportid: varchar('nasportid', { length: 32 }),
+    nasporttype: varchar('nasporttype', { length: 32 }),
+    acctstarttime: timestamp('acctstarttime'),
+    acctupdatetime: timestamp('acctupdatetime'),
+    acctstoptime: timestamp('acctstoptime'), // NULL = sessão ativa
+    acctsessiontime: integer('acctsessiontime'), // segundos conectado
+    acctauthentic: varchar('acctauthentic', { length: 32 }),
+    connectinfoStart: varchar('connectinfo_start', { length: 128 }),
+    connectinfoStop: varchar('connectinfo_stop', { length: 128 }),
+    acctinputoctets: bigint('acctinputoctets', { mode: 'bigint' }), // download em bytes
+    acctoutputoctets: bigint('acctoutputoctets', { mode: 'bigint' }), // upload em bytes
+    acctinterval: integer('acctinterval'),
+    calledstationid: varchar('calledstationid', { length: 50 }), // MAC/SSID do AP
+    callingstationid: varchar('callingstationid', { length: 50 }), // MAC do dispositivo
+    acctterminatecause: varchar('acctterminatecause', { length: 32 }),
+    servicetype: varchar('servicetype', { length: 32 }),
+    framedprotocol: varchar('framedprotocol', { length: 32 }),
+    framedipaddress: inet('framedipaddress'), // IP entregue ao membro
+    framedipv6address: inet('framedipv6address'),
+    framedipv6prefix: inet('framedipv6prefix'),
+    framedinterfaceid: varchar('framedinterfaceid', { length: 44 }),
+    delegatedipv6prefix: inet('delegatedipv6prefix'),
+  },
+  (table) => [uniqueIndex('radacct_acctuniqueid_key').on(table.acctuniqueid)],
+)

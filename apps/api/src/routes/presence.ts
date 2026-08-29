@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import { requireCoordinator } from '../middleware/require-auth.js'
-import { getUserHistory, listHistory, listOnline } from '../services/presence.service.js'
+import { disconnectSession, getUserHistory, listHistory, listOnline } from '../services/presence.service.js'
 import { API_PREFIX } from '../lib/paths.js'
 
 const jsonContent = (schema: z.ZodType) => ({ content: { 'application/json': { schema } } })
@@ -19,6 +19,33 @@ const onlineRoute = createRoute({
   responses: { 200: { description: 'Sessões online', ...jsonContent(z.object({ data: z.array(z.any()) })) } },
 })
 presenceRouter.openapi(onlineRoute, async (c) => c.json({ data: await listOnline() }))
+
+const disconnectRoute = createRoute({
+  method: 'post', path: `${API_PREFIX}/presence/sessions/{id}/disconnect`, tags: ['Presence'], summary: 'Desconectar sessão Wi-Fi',
+  request: { params: z.object({ id: z.string().regex(/^\d+$/) }) },
+  responses: {
+    200: { description: 'Desconexão solicitada', ...jsonContent(z.object({ data: z.object({ sessionId: z.string(), status: z.literal('disconnect_requested') }) })) },
+    404: { description: 'Sessão não encontrada', ...jsonContent(errorSchema) },
+    409: { description: 'Sessão já encerrada', ...jsonContent(errorSchema) },
+    502: { description: 'MikroTik recusou a desconexão', ...jsonContent(errorSchema) },
+    503: { description: 'CoA não configurado', ...jsonContent(errorSchema) },
+    504: { description: 'MikroTik não respondeu', ...jsonContent(errorSchema) },
+  },
+})
+presenceRouter.openapi(disconnectRoute, async (c) => {
+  try {
+    return c.json({ data: await disconnectSession(c.req.param('id')) }, 200)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+    if (message === 'SESSION_NOT_FOUND') return c.json({ error: 'Sessão não encontrada' }, 404)
+    if (message === 'SESSION_NOT_ACTIVE') return c.json({ error: 'Sessão já encerrada' }, 409)
+    if (message === 'RADIUS_COA_NOT_CONFIGURED') return c.json({ error: 'Desconexão RADIUS não configurada' }, 503)
+    if (message === 'RADIUS_DISCONNECT_TIMEOUT') return c.json({ error: 'MikroTik não respondeu à desconexão' }, 504)
+    if (message === 'RADIUS_DISCONNECT_NETWORK') return c.json({ error: 'Não foi possível alcançar o MikroTik' }, 502)
+    if (message === 'RADIUS_DISCONNECT_REJECTED') return c.json({ error: 'MikroTik recusou a desconexão' }, 502)
+    throw error
+  }
+})
 
 const historyQuery = pagination.extend({
   username: z.string().trim().optional(),

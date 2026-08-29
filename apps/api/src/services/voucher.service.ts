@@ -7,6 +7,7 @@ import {
   wifiProfiles,
 } from '@fabrica/db'
 import { desc, eq } from 'drizzle-orm'
+import { ACCT_INTERIM_INTERVAL_SECONDS } from '../lib/radius.js'
 
 export type GenerateVoucherBatchInput = {
   count: number
@@ -61,6 +62,7 @@ export async function generateVoucherBatch(input: GenerateVoucherBatchInput) {
       })
 
       // radreply: regras de banda/timeout se tiver perfil
+      radreplyValues.push({ username: code, attribute: 'Acct-Interim-Interval', op: ':=', value: ACCT_INTERIM_INTERVAL_SECONDS })
       if (wifiProfile) {
         if (wifiProfile.wifiRateLimit) {
           radreplyValues.push({ username: code, attribute: 'Mikrotik-Rate-Limit', op: '=', value: wifiProfile.wifiRateLimit })
@@ -73,9 +75,7 @@ export async function generateVoucherBatch(input: GenerateVoucherBatchInput) {
 
     const insertedVouchers = await tx.insert(vouchers).values(createdVouchers).returning()
     await tx.insert(radcheck).values(radcheckValues)
-    if (radreplyValues.length) {
-      await tx.insert(radreply).values(radreplyValues)
-    }
+    await tx.insert(radreply).values(radreplyValues)
 
     return insertedVouchers
   })

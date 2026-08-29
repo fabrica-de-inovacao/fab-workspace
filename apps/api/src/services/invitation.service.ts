@@ -13,6 +13,7 @@ import {
 } from '@fabrica/db'
 import { and, eq, gte, isNull } from 'drizzle-orm'
 import { env } from '../env.js'
+import { ACCT_INTERIM_INTERVAL_SECONDS } from '../lib/radius.js'
 import { sendInvitationEmail } from './email.service.js'
 
 const WIFI_PASSWORD_BYTES = 12
@@ -124,19 +125,19 @@ export async function acceptInvitation(input: AcceptInvitationInput) {
       value: input.password,
     })
 
+    const attributes = [{ username: user.email, attribute: 'Acct-Interim-Interval', op: ':=', value: ACCT_INTERIM_INTERVAL_SECONDS }]
     if (invitation.wifiProfileId) {
       const wifiProfile = await tx.query.wifiProfiles.findFirst({ where: eq(wifiProfiles.id, invitation.wifiProfileId) })
       if (wifiProfile) {
-        const attributes = []
         if (wifiProfile.wifiRateLimit) {
           attributes.push({ username: user.email, attribute: 'Mikrotik-Rate-Limit', op: '=', value: wifiProfile.wifiRateLimit })
         }
         if (wifiProfile.wifiSessionTimeout) {
           attributes.push({ username: user.email, attribute: 'Session-Timeout', op: '=', value: String(wifiProfile.wifiSessionTimeout) })
         }
-        if (attributes.length) await tx.insert(radreply).values(attributes)
       }
     }
+    await tx.insert(radreply).values(attributes)
 
     // 5. Marcar convite como aceito
     await tx.update(invitations).set({ acceptedAt: new Date() }).where(eq(invitations.id, invitation.id))

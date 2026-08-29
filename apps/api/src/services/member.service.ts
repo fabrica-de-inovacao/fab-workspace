@@ -10,6 +10,7 @@ import {
   wifiProfiles,
 } from '@fabrica/db'
 import { and, asc, count, desc, eq, ilike, inArray, or } from 'drizzle-orm'
+import { ACCT_INTERIM_INTERVAL_SECONDS } from '../lib/radius.js'
 
 const WIFI_PASSWORD_BYTES = 12
 
@@ -66,16 +67,16 @@ async function getWifiProfile(tx: Parameters<Parameters<typeof db.transaction>[0
 async function writeRadiusReply(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   username: string,
-  wifiProfile: typeof wifiProfiles.$inferSelect,
+  wifiProfile: typeof wifiProfiles.$inferSelect | null,
 ) {
-  const attributes = []
-  if (wifiProfile.wifiRateLimit) {
+  const attributes = [{ username, attribute: 'Acct-Interim-Interval', op: ':=', value: ACCT_INTERIM_INTERVAL_SECONDS }]
+  if (wifiProfile?.wifiRateLimit) {
     attributes.push({ username, attribute: 'Mikrotik-Rate-Limit', op: '=', value: wifiProfile.wifiRateLimit })
   }
-  if (wifiProfile.wifiSessionTimeout) {
+  if (wifiProfile?.wifiSessionTimeout) {
     attributes.push({ username, attribute: 'Session-Timeout', op: '=', value: String(wifiProfile.wifiSessionTimeout) })
   }
-  if (attributes.length) await tx.insert(radreply).values(attributes)
+  await tx.insert(radreply).values(attributes)
 }
 
 // ---------------------------------------------------------------------------
@@ -138,7 +139,7 @@ export async function createMember(input: CreateMemberInput) {
       op: ':=',
       value: wifiPassword,
     })
-    if (wifiProfile) await writeRadiusReply(tx, user.email, wifiProfile)
+    await writeRadiusReply(tx, user.email, wifiProfile)
 
     return { user, role, wifiProfile, wifiPassword }
   })
@@ -213,7 +214,7 @@ export async function updateMember(id: string, input: UpdateMemberInput) {
 
     if (input.wifiProfileId !== undefined || email !== current.email) {
       await tx.delete(radreply).where(eq(radreply.username, email))
-      if (current.active && wifiProfile) await writeRadiusReply(tx, email, wifiProfile)
+      if (current.active) await writeRadiusReply(tx, email, wifiProfile)
     }
 
     return user
@@ -244,7 +245,7 @@ export async function reactivateMember(id: string) {
     await tx.delete(radcheck).where(eq(radcheck.username, user.email))
     await tx.delete(radreply).where(eq(radreply.username, user.email))
     await tx.insert(radcheck).values({ username: user.email, attribute: 'Cleartext-Password', op: ':=', value: wifiPassword })
-    if (user.wifiProfile) await writeRadiusReply(tx, user.email, user.wifiProfile)
+    await writeRadiusReply(tx, user.email, user.wifiProfile)
     return { wifiPassword }
   })
 }

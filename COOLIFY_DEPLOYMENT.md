@@ -23,8 +23,8 @@ Este guia descreve o processo simplificado para implantar o **FabITZ Workspace**
  │                  └────────────▲────────────┘                           │
  │                               │                                        │
  │                  ┌────────────┴────────────┐                           │
- │                  │ FreeRADIUS na VPS       │                           │
- │                  │ (UDP 1812 / 1813)       │                           │
+│                  │ FreeRADIUS na VPS       │                           │
+│                  │ (UDP 1812 / 1813)       │                           │
  │                  └────────────▲────────────┘                           │
  └───────────────────────────────┼────────────────────────────────────────┘
                                  │ UDP (Auth 1812 / Acct 1813)
@@ -92,6 +92,8 @@ Como o FreeRADIUS já roda na VPS:
 
 1. Garanta que o FreeRADIUS aponte para o mesmo banco PostgreSQL configurado no `DATABASE_URL`.
 2. As tabelas `radcheck`, `radreply` e `radacct` criadas pelo app Hono serão automaticamente lidas/escritas pelo módulo `sql` do FreeRADIUS.
+3. Mantenha `Acct-Interim-Interval = 300` em `radreply` para que o MikroTik atualize sessões a cada 5 minutos.
+4. O painel considera uma sessão aberta sem atualização há mais de 15 minutos como **Possivelmente inativa**.
 
 ---
 
@@ -109,4 +111,16 @@ Como o FreeRADIUS já roda na VPS:
    - Aba `RADIUS`: Marcar `Use RADIUS` e `Accounting: Yes`
 
 3. **Walled Garden (Liberação de Acesso)**:
-   - Adicionar o IP da VPS e domínios do Google OAuth em `IP` -> `Hotspot` -> `Walled Garden`.
+    - Adicionar o IP da VPS e domínios do Google OAuth em `IP` -> `Hotspot` -> `Walled Garden`.
+
+4. **Permitir Disconnect/CoA para desconexão administrativa**:
+   - O endpoint da API envia `Disconnect-Request` para a porta UDP `3799`.
+   - No MikroTik, configure o listener de RADIUS incoming:
+
+```routeros
+/radius incoming set accept=yes port=3799
+```
+
+   - Use no listener o mesmo secret compartilhado configurado para o RADIUS da VPS.
+   - Confirme que firewall/ACL permite UDP `3799` da API para o MikroTik.
+   - Para o HotSpot, o accounting deve continuar habilitado e `Acct-Interim-Interval` deve permanecer em `300` segundos.

@@ -78,6 +78,10 @@ membersRouter.use(`${API_PREFIX}/members`, requireCoordinator)
 membersRouter.use(`${API_PREFIX}/members/*`, requireCoordinator)
 membersRouter.use(`${API_PREFIX}/roles`, requireCoordinator)
 membersRouter.use(`${API_PREFIX}/roles/*`, requireCoordinator)
+membersRouter.use(`${API_PREFIX}/roles`, async (c, next) => {
+  if (c.req.method === 'POST') return requireAdmin(c, next)
+  await next()
+})
 membersRouter.use(`${API_PREFIX}/wifi-profiles`, requireCoordinator)
 membersRouter.use(`${API_PREFIX}/wifi-profiles/*`, requireAdmin)
 
