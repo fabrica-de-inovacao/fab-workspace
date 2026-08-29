@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { Check, Copy, QrCode, ShieldOff, Ticket, Trash2 } from 'lucide-react'
+import { Check, Copy, QrCode, Ticket, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRevokeVoucher, type Voucher } from '../hooks/use-vouchers.js'
 import { formatVoucherCode } from '../lib/voucher-utils.js'
@@ -19,8 +19,8 @@ export function VoucherStatusBadge({ voucher }: { voucher: Voucher }) {
 
   if (isUsed) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-        <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
+        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
         Usado
       </span>
     )
@@ -28,16 +28,16 @@ export function VoucherStatusBadge({ voucher }: { voucher: Voucher }) {
 
   if (isExpired) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-2.5 py-0.5 text-xs font-medium text-red-700">
-        <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-error-soft px-2.5 py-0.5 text-xs font-medium text-error">
+        <span className="h-1.5 w-1.5 rounded-full bg-error" />
         Expirado
       </span>
     )
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-600" />
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary-soft px-2.5 py-0.5 text-xs font-medium text-secondary-700">
+      <span className="h-1.5 w-1.5 rounded-full bg-secondary-700" />
       Ativo
     </span>
   )
@@ -80,14 +80,14 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
           onOpenChange(val)
         }}
         title="Detalhes do Voucher"
-        subtitle="QR Code e informações de acesso para visitantes"
+        subtitle="QR Code e credenciais de acesso para visitantes"
         size="lg"
         footer={
           <div className="flex w-full items-center justify-between gap-3">
             <button
               type="button"
               onClick={() => setConfirmRevoke(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-error/30 bg-error/5 px-4 py-2 text-xs font-medium text-error hover:bg-error/10 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full border border-error/30 bg-error-soft/40 px-3.5 py-2 text-xs font-medium text-error transition-colors hover:bg-error-soft"
             >
               <Trash2 size={14} />
               <span>Inativar / Revogar</span>
@@ -96,7 +96,7 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="rounded-full bg-primary px-5 py-2 text-xs font-medium text-white hover:bg-primary-hover transition-colors"
+              className="rounded-full bg-primary px-5 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-hover"
             >
               Fechar
             </button>
@@ -105,9 +105,9 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
       >
         <div className="space-y-6 text-center">
           {/* Header Status */}
-          <div className="flex items-center justify-between rounded-xl bg-surface-soft p-4 border border-hairline">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <div className="flex items-center justify-between rounded-2xl bg-surface-soft p-4 border border-hairline">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft text-primary">
                 <Ticket size={18} />
               </div>
               <div className="text-left">
@@ -119,13 +119,14 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
           </div>
 
           {/* QR Code Container */}
-          <div className="mx-auto flex flex-col items-center justify-center rounded-2xl bg-white p-6 shadow-sm border border-hairline max-w-xs space-y-4">
+          <div className="mx-auto flex flex-col items-center justify-center rounded-2xl bg-surface-soft p-6 border border-hairline max-w-xs space-y-4">
             <div className="flex items-center gap-2 text-xs font-medium text-ink-muted">
               <QrCode size={16} className="text-primary" />
               <span>Escaneie no Captive Portal</span>
             </div>
 
-            <div className="p-2 bg-white rounded-xl shadow-xs border border-hairline">
+            {/* Inset optical wrapper for QR Code */}
+            <div className="p-3 bg-white rounded-2xl shadow-xs border border-hairline">
               <QRCodeSVG
                 value={formatVoucherCode(voucher.code)}
                 size={180}
@@ -138,47 +139,47 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
 
             {/* Código em Destaque */}
             <div className="w-full space-y-2">
-              <div className="flex items-center justify-between rounded-xl bg-surface-soft border border-hairline p-3">
+              <div className="flex items-center justify-between rounded-xl bg-surface border border-hairline p-3 shadow-xs">
                 <span className="font-mono text-base font-semibold tracking-wider text-primary select-all">
                   {formatVoucherCode(voucher.code)}
                 </span>
                 <button
                   type="button"
                   onClick={copyCode}
-                  className="inline-flex items-center gap-1 rounded-lg bg-surface border border-hairline px-3 py-1.5 text-xs font-medium text-ink hover:bg-hairline transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-surface-soft border border-hairline px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                 >
-                  {copiedCode ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                  {copiedCode ? 'Copiado' : 'Copiar'}
+                  {copiedCode ? <Check size={14} className="text-secondary-700" /> : <Copy size={14} />}
+                  <span>{copiedCode ? 'Copiado' : 'Copiar'}</span>
                 </button>
               </div>
             </div>
           </div>
 
           {/* Informações detalhadas */}
-          <div className="grid grid-cols-2 gap-4 text-left rounded-xl bg-surface-soft p-4 border border-hairline">
+          <div className="grid grid-cols-2 gap-4 text-left rounded-2xl bg-surface-soft p-4 border border-hairline">
             <div>
-              <p className="text-[10px] uppercase font-medium tracking-wider text-ink-muted">Perfil Wi-Fi</p>
+              <p className="text-[10px] uppercase font-semibold tracking-wider text-ink-muted/70">Perfil Wi-Fi</p>
               <p className="mt-0.5 text-xs font-mono text-primary font-medium">
                 {voucher.wifiProfile?.name ?? 'Padrão (Ilimitado)'}
               </p>
             </div>
 
             <div>
-              <p className="text-[10px] uppercase font-medium tracking-wider text-ink-muted">Validade</p>
+              <p className="text-[10px] uppercase font-semibold tracking-wider text-ink-muted/70">Validade</p>
               <p className="mt-0.5 text-xs text-ink font-medium">
                 {new Date(voucher.expiresAt).toLocaleDateString('pt-BR')} às {new Date(voucher.expiresAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
 
             <div>
-              <p className="text-[10px] uppercase font-medium tracking-wider text-ink-muted">Gerado Por</p>
+              <p className="text-[10px] uppercase font-semibold tracking-wider text-ink-muted/70">Gerado Por</p>
               <p className="mt-0.5 text-xs text-ink">
                 {voucher.createdBy?.name ?? 'Sistema'}
               </p>
             </div>
 
             <div>
-              <p className="text-[10px] uppercase font-medium tracking-wider text-ink-muted">Data de Criação</p>
+              <p className="text-[10px] uppercase font-semibold tracking-wider text-ink-muted/70">Data de Criação</p>
               <p className="mt-0.5 text-xs text-ink">
                 {new Date(voucher.createdAt).toLocaleDateString('pt-BR')}
               </p>
@@ -191,16 +192,16 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
       {confirmRevoke && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center">
           <div className="absolute inset-0 bg-ink/35 backdrop-blur-[2px]" onClick={() => setConfirmRevoke(false)} />
-          <div className="relative z-10 w-[calc(100%-2rem)] max-w-md rounded-2xl border border-hairline bg-surface p-6 shadow-2xl">
-            <h2 className="text-xl font-light tracking-tight text-ink">Inativar / Revogar Voucher?</h2>
-            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-              O código <strong>{formatVoucherCode(voucher.code)}</strong> será inativado e excluído do FreeRADIUS. O visitante não conseguirá mais se conectar com este código.
+          <div className="relative z-10 w-[calc(100%-2rem)] max-w-md rounded-3xl border border-hairline bg-surface p-6 shadow-2xl animate-[fadeUp_0.15s_ease-out]">
+            <h2 className="text-lg font-medium tracking-tight text-ink">Inativar / Revogar Voucher?</h2>
+            <p className="mt-2 text-xs leading-relaxed text-ink-muted">
+              O código <strong className="font-mono text-primary">{formatVoucherCode(voucher.code)}</strong> será inativado e excluído do FreeRADIUS. O visitante não conseguirá mais se conectar com este código.
             </p>
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setConfirmRevoke(false)}
-                className="rounded-full border border-hairline-input px-4 py-2 text-sm text-ink-muted"
+                className="rounded-full border border-hairline-input px-4 py-2 text-xs font-medium text-ink-muted transition-colors hover:border-primary hover:text-ink"
               >
                 Cancelar
               </button>
@@ -208,7 +209,7 @@ export function VoucherDetailDrawer({ open, onOpenChange, voucher, onRefresh }: 
                 type="button"
                 onClick={handleRevoke}
                 disabled={revokeVoucher.isPending}
-                className="rounded-full bg-error px-4 py-2 text-sm text-white hover:bg-error/90 disabled:opacity-60"
+                className="rounded-full bg-error px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-error/90 disabled:opacity-60"
               >
                 {revokeVoucher.isPending ? 'Inativando...' : 'Confirmar Inativação'}
               </button>
