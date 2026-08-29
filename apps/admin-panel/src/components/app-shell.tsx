@@ -4,6 +4,7 @@ import { ChevronDown, LayoutDashboard, LogOut, Moon, PanelLeftClose, PanelLeftOp
 import * as Tooltip from '@radix-ui/react-tooltip'
 import * as Dialog from '@radix-ui/react-dialog'
 import { authClient } from '../lib/auth-client.js'
+import { useThemeMode } from '../hooks/use-theme.js'
 import { SettingsDialog } from './settings-dialog.js'
 
 type RoleRequired = 'admin' | 'coordinator'
@@ -60,11 +61,7 @@ export function AppShell() {
 
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window === 'undefined') return false
-    const saved = window.localStorage.getItem('fab-theme')
-    return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
-  })
+  const { isDark, toggleTheme } = useThemeMode()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -74,11 +71,6 @@ export function AppShell() {
     'Rede': true,
     'Sistema': true,
   })
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode)
-    window.localStorage.setItem('fab-theme', darkMode ? 'dark' : 'light')
-  }, [darkMode])
 
   function isItemVisible(requiredRole?: RoleRequired) {
     if (requiredRole === 'admin') return isAdmin
@@ -254,11 +246,11 @@ export function AppShell() {
 
                 <button
                   type="button"
-                  onClick={() => { setDarkMode((v) => !v); setUserMenuOpen(false) }}
+                  onClick={() => { toggleTheme(); setUserMenuOpen(false) }}
                   className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-ink transition-colors hover:bg-surface-soft"
                 >
-                  {darkMode ? <Sun size={14} className="text-ink-muted/50" /> : <Moon size={14} className="text-ink-muted/50" />}
-                  {darkMode ? 'Modo claro' : 'Modo escuro'}
+                  {isDark ? <Sun size={14} className="text-ink-muted/50" /> : <Moon size={14} className="text-ink-muted/50" />}
+                  {isDark ? 'Modo claro' : 'Modo escuro'}
                 </button>
 
               </div>
@@ -321,7 +313,7 @@ export function AppShell() {
         </div>
       </div>
 
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} darkMode={darkMode} onDarkModeChange={setDarkMode} />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} darkMode={isDark} onDarkModeChange={() => toggleTheme()} />
     </div>
   )
 }

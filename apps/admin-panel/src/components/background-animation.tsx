@@ -30,8 +30,7 @@ export function BackgroundAnimation() {
     const DOT_ALPHA = 0.55
 
     // Paleta alinhada ao tema (@theme em index.css)
-    const darkMode = document.documentElement.classList.contains('dark')
-    const COLORS = darkMode ? {
+    const getColors = () => document.documentElement.classList.contains('dark') ? {
       primary: '#55B6E3',
       accent: '#62C4ED',
       secondary: '#A8D86D',
@@ -46,6 +45,12 @@ export function BackgroundAnimation() {
       dot: '#CBD5E1',
       surface: '#FFFFFF',
     }
+    let COLORS = getColors()
+
+    const handleThemeChange = () => {
+      COLORS = getColors()
+    }
+    window.addEventListener('fab-theme-change', handleThemeChange)
 
     // Zona de exclusão para o card de login (eixo px, CSS pixels).
     // Recalculada a cada resize com fallback centrado.
@@ -431,6 +436,7 @@ export function BackgroundAnimation() {
 
     return () => {
       window.removeEventListener('resize', resizeCanvas)
+      window.removeEventListener('fab-theme-change', handleThemeChange)
       document.removeEventListener('visibilitychange', onVisibility)
       cancelAnimationFrame(animationFrameId)
       gridRegistry.clear()
