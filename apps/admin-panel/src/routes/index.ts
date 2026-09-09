@@ -12,6 +12,7 @@ import { AppShell } from '../components/app-shell.js'
 import { RoutePending } from '../components/route-pending.js'
 
 const LoginPage = lazy(() => import('./login.js').then((module) => ({ default: module.LoginPage })))
+const ForgotPasswordPage = lazy(() => import('./forgot-password.js').then((module) => ({ default: module.ForgotPasswordPage })))
 const DashboardPage = lazy(() => import('./dashboard.js').then((module) => ({ default: module.DashboardPage })))
 const ProfilePage = lazy(() => import('./profile.js').then((module) => ({ default: module.ProfilePage })))
 const MembersPage = lazy(() => import('./members.js').then((module) => ({ default: module.MembersPage })))
@@ -87,6 +88,17 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   component: LoginPage,
+  beforeLoad: async () => {
+    const result = await authClient.getSession()
+    const session = result && 'data' in result ? result.data : result
+    if (session) throw redirect({ to: '/dashboard' })
+  },
+})
+
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/forgot-password',
+  component: ForgotPasswordPage,
   beforeLoad: async () => {
     const result = await authClient.getSession()
     const session = result && 'data' in result ? result.data : result
@@ -188,6 +200,7 @@ const indexRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
+  forgotPasswordRoute,
   politicasRoute,
   termosRoute,
   authenticatedRoute.addChildren([

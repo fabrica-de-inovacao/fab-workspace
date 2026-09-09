@@ -25,6 +25,7 @@ export function formatVoucherInput(code: string): string {
 
 export function App() {
   const params = parseMikroTikParams(window.location.search)
+  const workspaceUrl = import.meta.env.VITE_WORKSPACE_URL ?? (import.meta.env.DEV ? 'http://localhost:5173' : 'https://workspace.fabitz.com.br')
   const [mode, setMode] = useState<Mode>('credentials')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -161,6 +162,17 @@ export function App() {
                     >
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
+                  </div>
+
+                  <div className="mt-2 flex justify-end">
+                    <a
+                      href={`${workspaceUrl}/forgot-password`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-medium text-primary transition-colors hover:text-primary-hover hover:underline"
+                    >
+                      Esqueci minha senha
+                    </a>
                   </div>
                 </div>
 

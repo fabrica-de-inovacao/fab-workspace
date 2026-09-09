@@ -12,10 +12,11 @@ import { invitationsRouter } from './routes/invitations.js'
 import { membersRouter } from './routes/members.js'
 import { presenceRouter } from './routes/presence.js'
 import { vouchersRouter } from './routes/vouchers.js'
-import { closeDatabase, db, users } from '@fabrica/db'
-import { eq, sql } from 'drizzle-orm'
+import { accounts, closeDatabase, db, users } from '@fabrica/db'
+import { and, eq, sql } from 'drizzle-orm'
 import { securityHeaders } from './middleware/security.js'
 import { API_PREFIX, AUTH_PATH, DOCS_PATH, OPENAPI_PATH } from './lib/paths.js'
+import { syncRadiusPassword } from './services/member.service.js'
 
 const app = new OpenAPIHono()
 
@@ -76,6 +77,54 @@ app.post(`${AUTH_PATH}/sign-in/email`, async (c) => {
   const headers = new Headers(c.req.raw.headers)
   headers.delete('content-length')
   return auth.handler(new Request(c.req.raw.url, { method: 'POST', headers, body: JSON.stringify(authBody) }))
+})
+app.post(`${AUTH_PATH}/email-otp/reset-password`, async (c) => {
+  const body = await c.req.json().catch(() => null) as { email?: unknown; otp?: unknown; password?: unknown } | null
+  if (!body || typeof body.email !== 'string' || typeof body.otp !== 'string' || typeof body.password !== 'string') {
+    return c.json({ error: 'Dados inválidos' }, 400)
+  }
+
+  const email = body.email.trim().toLowerCase()
+  const user = await db.query.users.findFirst({ where: eq(users.email, email) })
+  if (user && !user.active) return c.json({ error: 'Código inválido ou expirado' }, 400)
+
+  const previousAccount = user
+    ? await db.query.accounts.findFirst({
+        where: and(eq(accounts.userId, user.id), eq(accounts.providerId, 'credential')),
+      })
+    : undefined
+
+  const headers = new Headers(c.req.raw.headers)
+  headers.delete('content-length')
+  const response = await auth.handler(new Request(c.req.raw.url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  }))
+
+  if (!response.ok || !user) return response
+
+  try {
+    await syncRadiusPassword(user.email, body.password)
+    return response
+  } catch (error) {
+    console.error(JSON.stringify({ event: 'password_reset_radius_sync_failed', userId: user.id, error: error instanceof Error ? error.message : 'unknown' }))
+
+    await db.transaction(async (tx) => {
+      if (previousAccount) {
+        await tx.update(accounts)
+          .set({ password: previousAccount.password, updatedAt: new Date() })
+          .where(eq(accounts.id, previousAccount.id))
+      } else {
+        const createdAccount = await tx.query.accounts.findFirst({
+          where: and(eq(accounts.userId, user.id), eq(accounts.providerId, 'credential')),
+        })
+        if (createdAccount) await tx.delete(accounts).where(eq(accounts.id, createdAccount.id))
+      }
+    })
+
+    return c.json({ error: 'Não foi possível sincronizar a senha com o Wi-Fi' }, 503)
+  }
 })
 app.all(`${AUTH_PATH}/*`, (c) => auth.handler(c.req.raw))
 app.route('/', bootstrapRouter)

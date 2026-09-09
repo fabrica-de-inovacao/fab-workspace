@@ -1,10 +1,12 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { emailOTP } from 'better-auth/plugins'
 import { db } from '@fabrica/db'
 import { users, sessions, accounts, verifications } from '@fabrica/db'
 import { eq } from 'drizzle-orm'
 import { env } from '../env.js'
 import { AUTH_PATH } from './paths.js'
+import { sendPasswordResetCodeEmail } from '../services/email.service.js'
 
 export const auth = betterAuth({
   // -------------------------------------------------------------------------
@@ -51,6 +53,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     disableSignUp: true, // contas só criadas por admin ou convite
+    revokeSessionsOnPasswordReset: true,
     // Hook que resolve CPF → email antes do Better Auth autenticar
     async authorize(credentials: Record<string, unknown>) {
       const raw = credentials.email as string
@@ -131,6 +134,23 @@ export const auth = betterAuth({
     'http://localhost:5173',
     'https://workspace.fabitz.com.br',
     'https://api.workspace.fabitz.com.br',
+  ],
+
+  plugins: [
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 5 * 60,
+      allowedAttempts: 3,
+      storeOTP: 'hashed',
+      disableSignUp: true,
+      async sendVerificationOTP({ email, otp, type }) {
+        if (type === 'forget-password') {
+          void sendPasswordResetCodeEmail({ to: email, otp }).catch((error) => {
+            console.error(JSON.stringify({ event: 'password_reset_email_failed', error: error instanceof Error ? error.message : 'unknown' }))
+          })
+        }
+      },
+    }),
   ],
 })
 

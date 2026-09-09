@@ -34,6 +34,24 @@ integration('member RADIUS transaction integration', () => {
     expect(credential?.attribute).toBe('Cleartext-Password')
   })
 
+  it('syncs the workspace password to the RADIUS credential', async () => {
+    const user = await database.db.query.users.findFirst({
+      where: (await import('drizzle-orm')).eq(database.users.email, email),
+    })
+    if (!user) throw new Error('Integration user not found')
+
+    const password = `reset-${randomUUID()}`
+    await service.syncRadiusPassword(email, password)
+    const credential = await database.db.query.radcheck.findFirst({
+      where: (await import('drizzle-orm')).and(
+        (await import('drizzle-orm')).eq(database.radcheck.username, email),
+        (await import('drizzle-orm')).eq(database.radcheck.attribute, 'Cleartext-Password'),
+      ),
+    })
+
+    expect(credential?.value).toBe(password)
+  })
+
   it('deactivation removes RADIUS check and reply records', async () => {
     const user = await database.db.query.users.findFirst({
       where: (await import('drizzle-orm')).eq(database.users.email, email),

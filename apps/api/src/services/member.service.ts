@@ -270,3 +270,22 @@ export async function resetWifiPassword(id: string) {
     return { wifiPassword }
   })
 }
+
+export async function syncRadiusPassword(email: string, password: string) {
+  await db.transaction(async (tx) => {
+    const user = await tx.query.users.findFirst({ where: eq(users.email, email) })
+    if (!user) throw new Error('MEMBER_NOT_FOUND')
+    if (!user.active) throw new Error('MEMBER_INACTIVE')
+
+    await tx.delete(radcheck).where(and(
+      eq(radcheck.username, email),
+      eq(radcheck.attribute, 'Cleartext-Password'),
+    ))
+    await tx.insert(radcheck).values({
+      username: email,
+      attribute: 'Cleartext-Password',
+      op: ':=',
+      value: password,
+    })
+  })
+}

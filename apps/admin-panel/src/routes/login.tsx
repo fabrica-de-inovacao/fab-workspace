@@ -241,7 +241,7 @@ export function LoginPage() {
               </div>
             </div>
 
-            <div>
+                <div>
               <label htmlFor={passwordId} className="mb-1.5 block text-xs font-medium tracking-wide text-ink-muted">
                 Crie sua Senha de Acesso <span className="text-red-500">*</span>
               </label>
@@ -369,6 +369,12 @@ export function LoginPage() {
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+
+                <div className="mt-2 flex justify-end">
+                  <Link to="/forgot-password" className="text-xs font-medium text-primary transition-colors hover:text-primary-hover hover:underline">
+                    Esqueci minha senha
+                  </Link>
+                </div>
               </div>
 
               <button
@@ -385,6 +391,7 @@ export function LoginPage() {
                   'Entrar'
                 )}
               </button>
+
             </form>
 
             {/* Divider */}

@@ -66,3 +66,61 @@ export async function sendInvitationEmail({ to, name, inviteLink }: SendInvitati
     console.log(`Link de Convite: ${inviteLink}\n`)
   }
 }
+
+export type SendPasswordResetCodeEmailInput = {
+  to: string
+  otp: string
+}
+
+export async function sendPasswordResetCodeEmail({ to, otp }: SendPasswordResetCodeEmailInput) {
+  const subject = 'Código para redefinir sua senha — FabITZ Workspace'
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Inter', system-ui, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 32px 16px; }
+          .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+          .header { text-align: center; margin-bottom: 24px; }
+          .title { font-size: 20px; font-weight: 300; color: #0066A1; margin: 0; }
+          .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
+          .content { font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 28px; }
+          .code { margin: 28px 0; padding: 18px; border-radius: 12px; background: #f1f5f9; color: #0066A1; font-family: monospace; font-size: 30px; font-weight: 700; letter-spacing: 0.35em; text-align: center; }
+          .footer { font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 28px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 class="title">FabITZ Workspace</h1>
+            <div class="subtitle">Fábrica de Inovação</div>
+          </div>
+          <div class="content">
+            <p>Recebemos uma solicitação para redefinir sua senha do Workspace.</p>
+            <p>Use o código abaixo para continuar:</p>
+            <div class="code">${otp}</div>
+            <p>O código expira em 5 minutos e só pode ser usado uma vez. Se você não solicitou esta alteração, ignore este email.</p>
+          </div>
+          <div class="footer">
+            <p>Fábrica de Inovação — Segurança do Workspace</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+
+  if (resend) {
+    await resend.emails.send({
+      from: 'FabITZ Workspace <workspace@fabitz.com.br>',
+      to: [to],
+      subject,
+      html,
+    })
+  } else {
+    console.log('\n✉️ [RESEND DEV FALLBACK - CÓDIGO DE RESET]')
+    console.log(`Para: ${to}`)
+    console.log(`Assunto: ${subject}`)
+    console.log(`Código: ${otp}\n`)
+  }
+}

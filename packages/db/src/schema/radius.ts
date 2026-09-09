@@ -15,7 +15,7 @@ import {
 // ATENÇÃO: Estas tabelas são controladas pelo FreeRADIUS.
 // NÃO alterar nomes de colunas, tipos ou estrutura.
 // O app apenas faz INSERT/UPDATE/DELETE em radcheck e radreply.
-// radacct é READ-ONLY para o app (FreeRADIUS escreve nela).
+// radacct e radpostauth são READ-ONLY para o app (FreeRADIUS escreve nelas).
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
@@ -94,3 +94,15 @@ export const radacct = pgTable(
   },
   (table) => [uniqueIndex('radacct_acctuniqueid_key').on(table.acctuniqueid)],
 )
+
+// ---------------------------------------------------------------------------
+// radpostauth — histórico de tentativas de autenticação (READ-ONLY pelo app)
+// ---------------------------------------------------------------------------
+export const radpostauth = pgTable('radpostauth', {
+  id: bigserial('id', { mode: 'bigint' }).primaryKey(),
+  username: varchar('username', { length: 64 }).notNull().default(''),
+  pass: varchar('pass', { length: 64 }).notNull().default(''),
+  reply: varchar('reply', { length: 32 }).notNull().default(''),
+  authdate: timestamp('authdate', { withTimezone: true }).notNull().defaultNow(),
+  class: varchar('class', { length: 64 }).notNull().default(''),
+})
